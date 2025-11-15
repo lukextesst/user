@@ -113,6 +113,65 @@
         100% { background-position: 0 100px; }
     }
 
+    /* Header com perfil do usuário */
+    .main-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 580px;
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    .header-content {
+      text-align: left;
+      flex-grow: 1;
+    }
+
+    .user-profile-header {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.5rem 1rem;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      border: 1px solid var(--panel-border-color);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 200px;
+      justify-content: flex-end;
+    }
+
+    .user-profile-header:hover {
+      background: rgba(255,255,255,0.08);
+      transform: translateY(-2px);
+    }
+
+    .user-avatar-header {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid var(--panel-highlight-color);
+    }
+
+    .user-info-header {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .username-header {
+      font-weight: bold;
+      color: var(--text-color-light);
+      font-size: 0.9em;
+    }
+
+    .discriminator-header {
+      color: var(--text-color-medium);
+      font-size: 0.8em;
+    }
+
     .container {
       position: relative; z-index: 1; background-color: var(--panel-bg-color);
       padding: 1.5rem; border-radius: 16px; 
@@ -965,6 +1024,17 @@
             width: 100%; padding: 1.2rem;
             margin-top: 0.5rem; margin-bottom: 0.5rem; 
         }
+        .main-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .user-profile-header {
+            width: 100%;
+            justify-content: center;
+        }
+        .user-info-header {
+            align-items: center;
+        }
         header h1 { font-size: 1.6em; }
         .key-value { font-size: 1.1em; }
         .keys-list-section ul { max-height: 160px; }
@@ -1015,12 +1085,26 @@
   <div id="starfield"></div> 
   <div class="scanline-overlay"></div>
   
-  <main class="container">
-    <header>
-      <h1>Terminal de Acesso - MIRA HQ</h1>
-      <p class="subtitle">🧑‍🚀 Tripulante, requisite sua Identificação de Acesso ou verifique os registros do ciclo atual. Mantenha-se alerta!</p>
-    </header>
+  <!-- Header com perfil do usuário no canto superior direito -->
+  <div class="main-header">
+    <div class="header-content">
+      <header>
+        <h1>Terminal de Acesso - MIRA HQ</h1>
+        <p class="subtitle">🧑‍🚀 Tripulante, requisite sua Identificação de Acesso ou verifique os registros do ciclo atual. Mantenha-se alerta!</p>
+      </header>
+    </div>
+    
+    <!-- Perfil do usuário no canto superior direito -->
+    <div id="userProfileHeader" class="user-profile-header" style="display: none;">
+      <img id="userAvatarHeader" src="" alt="Avatar" class="user-avatar-header">
+      <div class="user-info-header">
+        <span id="userNameHeader" class="username-header"></span>
+        <span id="userDiscriminatorHeader" class="discriminator-header"></span>
+      </div>
+    </div>
+  </div>
 
+  <main class="container">
     <!-- Discord Auth Section -->
     <section id="authSection" class="auth-section">
         <div id="userProfile" style="display: none;">
@@ -1189,7 +1273,7 @@
     // ==================== CONFIGURAÇÃO ====================
     const CONFIG = {
       API_BASE_URL: 'https://keygen2.onrender.com',
-      SHORTENER_URL: 'https://link-target.net/63830/dfTOvKegYIZo',
+      SHORTENER_URL: 'https://link-target.net/63830/among-us-modmenu-key1',
       MAX_KEY_LIMIT: 5,
       COOLDOWN_DURATION: 30000,
       BACKEND_VERIFICATION_TOKEN_KEY: 'miraHqBackendVerificationToken',
@@ -1245,7 +1329,12 @@
       statActiveKeys: document.getElementById('statActiveKeys'),
       statMemberSince: document.getElementById('statMemberSince'),
       modalGenerateBtn: document.getElementById('modalGenerateBtn'),
-      modalLogoutBtn: document.getElementById('modalLogoutBtn')
+      modalLogoutBtn: document.getElementById('modalLogoutBtn'),
+      // Novos elementos para o header
+      userProfileHeader: document.getElementById('userProfileHeader'),
+      userAvatarHeader: document.getElementById('userAvatarHeader'),
+      userNameHeader: document.getElementById('userNameHeader'),
+      userDiscriminatorHeader: document.getElementById('userDiscriminatorHeader')
     };
 
     // ==================== ESTADO DA APLICAÇÃO ====================
@@ -1268,19 +1357,60 @@
         this.userData = JSON.parse(localStorage.getItem('crewbot_user') || 'null');
         this.userStats = JSON.parse(localStorage.getItem('crewbot_stats') || 'null');
         this.isAuthenticated = !!this.sessionId;
+        this.sessionExpiresAt = parseInt(localStorage.getItem('crewbot_session_expires') || '0');
       }
 
       async init() {
         this.setupEventListeners();
         this.setupModal();
-        this.updateUI();
         
-        if (this.sessionId) {
-          await this.validateSession();
-          await this.loadUserStats();
+        // Verificar se a sessão está expirada
+        if (this.isSessionExpired()) {
+          await this.logout();
+          this.updateUI();
+        } else if (this.sessionId) {
+          // Tentar validar a sessão existente
+          const isValid = await this.validateSession();
+          if (isValid) {
+            await this.loadUserStats();
+          } else {
+            // Tentar refresh da sessão
+            await this.refreshSession();
+          }
         }
         
+        this.updateUI();
         this.handleCallbackFromURL();
+      }
+
+      isSessionExpired() {
+        return Date.now() > this.sessionExpiresAt;
+      }
+
+      async refreshSession() {
+        if (!this.sessionId) return false;
+        
+        try {
+          const response = await fetch(`${CONFIG.API_BASE_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'X-Session-ID': this.sessionId }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.status === 'success') {
+              this.userData = data.user;
+              this.sessionExpiresAt = data.session_expires_at;
+              localStorage.setItem('crewbot_user', JSON.stringify(this.userData));
+              localStorage.setItem('crewbot_session_expires', this.sessionExpiresAt.toString());
+              return true;
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao refresh session:', error);
+        }
+        
+        return false;
       }
 
       setupEventListeners() {
@@ -1292,6 +1422,10 @@
         }
         if (elements.userProfileMain) {
           elements.userProfileMain.addEventListener('click', () => this.showUserModal());
+        }
+        // Novo listener para o header
+        if (elements.userProfileHeader) {
+          elements.userProfileHeader.addEventListener('click', () => this.showUserModal());
         }
       }
 
@@ -1375,9 +1509,11 @@
         this.sessionId = data.session_id;
         this.userData = data.user;
         this.isAuthenticated = true;
+        this.sessionExpiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 horas
 
         localStorage.setItem('crewbot_session', this.sessionId);
         localStorage.setItem('crewbot_user', JSON.stringify(this.userData));
+        localStorage.setItem('crewbot_session_expires', this.sessionExpiresAt.toString());
 
         await this.loadUserStats();
         this.updateUI();
@@ -1414,23 +1550,28 @@
 
       async validateSession() {
         if (!this.sessionId) return false;
+        
         try {
           const response = await fetch(`${CONFIG.API_BASE_URL}/auth/me`, {
             headers: { 'X-Session-ID': this.sessionId }
           });
+          
           if (response.ok) {
             const data = await response.json();
-            this.userData = data.user;
-            this.updateUI();
-            return true;
-          } else {
-            this.logout();
-            return false;
+            if (data.status === 'success') {
+              this.userData = data.user;
+              this.sessionExpiresAt = data.session_expires_at;
+              localStorage.setItem('crewbot_user', JSON.stringify(this.userData));
+              localStorage.setItem('crewbot_session_expires', this.sessionExpiresAt.toString());
+              this.updateUI();
+              return true;
+            }
           }
         } catch (error) {
-          this.logout();
-          return false;
+          console.error('Erro ao validar sessão:', error);
         }
+        
+        return false;
       }
 
       async loadUserStats() {
@@ -1474,9 +1615,8 @@
       updateModal() {
         if (!this.userData || !this.userStats) return;
 
-        const avatarUrl = this.userData.avatar ? 
-          `https://cdn.discordapp.com/avatars/${this.userData.id}/${this.userData.avatar}.png?size=128` :
-          'https://cdn.discordapp.com/embed/avatars/0.png';
+        // Use a função corrigida para obter o avatar
+        const avatarUrl = this.getAvatarUrl(this.userData.id, this.userData.avatar, 128);
         
         elements.modalUserAvatar.src = avatarUrl;
         elements.modalUserName.textContent = this.userData.global_name || this.userData.username;
@@ -1532,11 +1672,13 @@
         localStorage.removeItem('crewbot_session');
         localStorage.removeItem('crewbot_user');
         localStorage.removeItem('crewbot_stats');
+        localStorage.removeItem('crewbot_session_expires');
         
         this.sessionId = null;
         this.userData = null;
         this.userStats = null;
         this.isAuthenticated = false;
+        this.sessionExpiresAt = 0;
 
         this.updateUI();
         this.hideUserModal();
@@ -1545,18 +1687,30 @@
         await fetchUserKeyList();
       }
 
+      // Adicione esta função para corrigir o problema do avatar
+      getAvatarUrl(userId, avatarHash, size = 64) {
+        if (!avatarHash) {
+          return `https://cdn.discordapp.com/embed/avatars/${userId % 5}.png`;
+        }
+        return `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.png?size=${size}`;
+      }
+
       updateUI() {
         if (this.isAuthenticated && this.userData) {
           elements.userProfile.style.display = 'block';
+          elements.userProfileHeader.style.display = 'flex'; // Mostrar no header
           elements.discordAuthBtn.style.display = 'none';
 
-          const avatarUrl = this.userData.avatar ? 
-            `https://cdn.discordapp.com/avatars/${this.userData.id}/${this.userData.avatar}.png?size=64` :
-            'https://cdn.discordapp.com/embed/avatars/0.png';
+          // Use a função corrigida para obter o avatar
+          const avatarUrl = this.getAvatarUrl(this.userData.id, this.userData.avatar, 64);
+          const avatarUrlHeader = this.getAvatarUrl(this.userData.id, this.userData.avatar, 40);
 
           elements.userAvatar.src = avatarUrl;
+          elements.userAvatarHeader.src = avatarUrlHeader;
           elements.userName.textContent = this.userData.global_name || this.userData.username;
+          elements.userNameHeader.textContent = this.userData.global_name || this.userData.username;
           elements.userDiscriminator.textContent = `@${this.userData.username}`;
+          elements.userDiscriminatorHeader.textContent = `@${this.userData.username}`;
 
           const isServerMember = this.userStats ? this.userStats.is_server_member : this.userData.isServerMember;
           if (isServerMember) {
@@ -1569,6 +1723,7 @@
 
         } else {
           elements.userProfile.style.display = 'none';
+          elements.userProfileHeader.style.display = 'none'; // Esconder no header
           elements.discordAuthBtn.style.display = 'flex';
           this.updateGenerateButton(false);
         }
@@ -2144,7 +2299,28 @@
           '⚠️ LIMITE ATINGIDO: Você possui o máximo de 5 IDs. Use uma ID no mod Among Us para liberar espaço antes de gerar nova.': '⚠️ LIMIT REACHED: You have the maximum of 5 IDs. Use an ID in the Among Us mod to free up space before generating a new one.',
           '🚫 ERRO DE SEGURANÇA: URL de verificação não confiável.': '🚫 SECURITY ERROR: Untrusted verification URL.',
           '✅ Sistema pronto para nova solicitação!': '✅ System ready for new request!',
-          '🆘 Suporte': '🆘 Support'
+          '🆘 Suporte': '🆘 Support',
+          '🎮 Entrar com Discord': '🎮 Login with Discord',
+          '🚪 Sair': '🚪 Logout',
+          'Membro do servidor': 'Server member',
+          'Fora do servidor': 'Not in server',
+          'Keys Hoje': 'Keys Today',
+          'Total Keys': 'Total Keys',
+          'Keys Ativas': 'Active Keys',
+          'Membro desde': 'Member since',
+          '🚀 Gerar Nova Key': '🚀 Generate New Key',
+          'Suporte - Discord': 'Support - Discord',
+          '🔐 Autenticação necessária': '🔐 Authentication required',
+          '🚫 Sessão expirada ou inválida': '🚫 Session expired or invalid',
+          '🔑 Tripulante Veterano - 5 IDs geradas!': '🔑 Veteran Crewmate - 5 IDs generated!',
+          '🔑 Especialista em Segurança - 10 IDs!': '🔑 Security Expert - 10 IDs!',
+          '🔑 Primeiro Acesso - Bem-vindo à MIRA HQ!': '🔑 First Access - Welcome to MIRA HQ!',
+          '🎮 Entre no nosso servidor Discord para gerar keys!': '🎮 Join our Discord server to generate keys!',
+          '🚀 Entrar no Servidor Crewbot': '🚀 Join Crewbot Server',
+          'NO SERVIDOR': 'IN SERVER',
+          'FORA DO SERVIDOR': 'NOT IN SERVER',
+          '🔐 LOGIN REQUERIDO': '🔐 LOGIN REQUIRED',
+          '🎮 SERVIDOR NÃO VERIFICADO': '🎮 SERVER NOT VERIFIED'
         };
 
         Object.keys(translations).forEach(key => {
@@ -2268,6 +2444,20 @@
       });
     }
 
+    // Adicione esta função para verificar periodicamente a sessão
+    function setupSessionWatcher() {
+      // Verificar a sessão a cada minuto
+      setInterval(async () => {
+        if (discordAuth.isAuthenticated) {
+          const isValid = await discordAuth.validateSession();
+          if (!isValid) {
+            console.log('Sessão expirada, fazendo logout...');
+            await discordAuth.logout();
+          }
+        }
+      }, 60000); // 1 minuto
+    }
+
     // ==================== INITIALIZATION ====================
     function initializeApp() {
       try {
@@ -2292,6 +2482,7 @@
       setupEventListeners();
       checkAndProcessShortenerReturn();
       discordAuth.init();
+      setupSessionWatcher();
       
       setTimeout(() => {
         if (appState.soundEnabled) {
