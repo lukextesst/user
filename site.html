@@ -146,6 +146,7 @@
     .user-profile-header:hover {
       background: rgba(255,255,255,0.08);
       transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(106, 147, 201, 0.2);
     }
 
     .user-avatar-header {
@@ -201,13 +202,14 @@
       font-size: 0.9em; line-height: 1.6; font-style: italic;
     }
 
-    /* Auth Section */
+    /* Auth Section - Simplificada */
     .auth-section {
         margin-bottom: 1.5rem;
         padding: 1rem;
         background: rgba(0,0,0,0.3);
         border-radius: 8px;
         border: 1px solid var(--panel-border-color);
+        text-align: center;
     }
 
     .discord-auth-btn {
@@ -227,93 +229,17 @@
         justify-content: center;
         text-transform: uppercase;
         letter-spacing: 1px;
+        box-shadow: 0 5px 0px #4752c4, 0 8px 12px rgba(0,0,0,0.3);
     }
 
     .discord-auth-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(88, 101, 242, 0.4);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 0px #4752c4, 0 10px 15px rgba(88, 101, 242, 0.4);
     }
 
-    .user-profile {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 1rem;
-        background: rgba(255,255,255,0.05);
-        border-radius: 8px;
-        border: 1px solid var(--panel-border-color);
-    }
-
-    .user-profile-main {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        flex-grow: 1;
-        cursor: pointer;
-        padding: 0.5rem;
-        border-radius: 6px;
-        transition: background 0.3s ease;
-    }
-
-    .user-profile-main:hover {
-        background: rgba(255,255,255,0.08);
-    }
-
-    .user-avatar {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        border: 2px solid var(--panel-highlight-color);
-    }
-
-    .user-info {
-        display: flex;
-        flex-direction: column;
-        flex-grow: 1;
-    }
-
-    .username {
-        font-weight: bold;
-        color: var(--text-color-light);
-        font-size: 1.1em;
-    }
-
-    .discriminator {
-        color: var(--text-color-medium);
-        font-size: 0.9em;
-    }
-
-    .server-status {
-        margin-top: 0.3rem;
-        font-size: 0.8em;
-        font-weight: 600;
-    }
-
-    .status-verified {
-        color: var(--success-color);
-    }
-
-    .status-missing {
-        color: var(--impostor-red);
-    }
-
-    .logout-btn {
-        background: var(--impostor-red);
-        color: white;
-        border: none;
-        padding: 0.7rem 1rem;
-        border-radius: 6px;
-        cursor: pointer;
-        font-family: var(--font-body);
-        font-weight: 600;
-        transition: all 0.3s ease;
-        white-space: nowrap;
-    }
-
-    .logout-btn:hover {
-        background: var(--impostor-red-darker);
-        transform: translateY(-2px);
+    .discord-auth-btn:active {
+        transform: translateY(1px);
+        box-shadow: 0 3px 0px #4752c4, 0 6px 10px rgba(0,0,0,0.3);
     }
 
     /* Controls */
@@ -1017,6 +943,34 @@
         transform: translateY(-2px);
     }
 
+    /* Status Indicator */
+    .status-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        padding: 0.7rem;
+        border-radius: 8px;
+        background: rgba(0,0,0,0.2);
+        border: 1px solid var(--panel-border-color);
+    }
+
+    .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+
+    .status-dot.online {
+        background: var(--success-color);
+    }
+
+    .status-dot.offline {
+        background: var(--error-color);
+    }
+
     /* Responsive */
     @media (max-width: 520px) {
         body { padding: 1rem 0.5rem; } 
@@ -1105,21 +1059,14 @@
   </div>
 
   <main class="container">
-    <!-- Discord Auth Section -->
+    <!-- Status Indicator -->
+    <div class="status-indicator">
+      <div class="status-dot online"></div>
+      <span>Sistema MIRA HQ Online</span>
+    </div>
+
+    <!-- Discord Auth Section - Simplificada -->
     <section id="authSection" class="auth-section">
-        <div id="userProfile" style="display: none;">
-            <div class="user-profile">
-                <div class="user-profile-main" id="userProfileMain">
-                    <img id="userAvatar" src="" alt="Avatar" class="user-avatar">
-                    <div class="user-info">
-                        <span id="userName" class="username"></span>
-                        <span id="userDiscriminator" class="discriminator"></span>
-                        <div id="serverStatus" class="server-status"></div>
-                    </div>
-                </div>
-                <button id="logoutBtn" class="logout-btn">🚪 Sair</button>
-            </div>
-        </div>
         <button id="discordAuthBtn" class="discord-auth-btn">
             <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE4LjU0IDcuNzZMMTcuMDggMTkuMkwxMiA5LjY4TDYuOTIgMTkuMkw1LjQ2IDcuNzZMMTIgNS4xTDE4LjU0IDcuNzZaIiBmaWxsPSIjNTg2NUYyIi8+Cjwvc3ZnPg==" alt="Discord">
             🎮 Entrar com Discord
@@ -1312,13 +1259,6 @@
       overlay: document.getElementById('overlay'),
       closeWidget: document.getElementById('closeWidget'),
       discordAuthBtn: document.getElementById('discordAuthBtn'),
-      userProfile: document.getElementById('userProfile'),
-      userProfileMain: document.getElementById('userProfileMain'),
-      userAvatar: document.getElementById('userAvatar'),
-      userName: document.getElementById('userName'),
-      userDiscriminator: document.getElementById('userDiscriminator'),
-      serverStatus: document.getElementById('serverStatus'),
-      logoutBtn: document.getElementById('logoutBtn'),
       userProfileModal: document.getElementById('userProfileModal'),
       modalUserAvatar: document.getElementById('modalUserAvatar'),
       modalUserName: document.getElementById('modalUserName'),
@@ -1334,7 +1274,8 @@
       userProfileHeader: document.getElementById('userProfileHeader'),
       userAvatarHeader: document.getElementById('userAvatarHeader'),
       userNameHeader: document.getElementById('userNameHeader'),
-      userDiscriminatorHeader: document.getElementById('userDiscriminatorHeader')
+      userDiscriminatorHeader: document.getElementById('userDiscriminatorHeader'),
+      authSection: document.getElementById('authSection')
     };
 
     // ==================== ESTADO DA APLICAÇÃO ====================
@@ -1416,12 +1357,6 @@
       setupEventListeners() {
         if (elements.discordAuthBtn) {
           elements.discordAuthBtn.addEventListener('click', () => this.startAuth());
-        }
-        if (elements.logoutBtn) {
-          elements.logoutBtn.addEventListener('click', () => this.logout());
-        }
-        if (elements.userProfileMain) {
-          elements.userProfileMain.addEventListener('click', () => this.showUserModal());
         }
         // Novo listener para o header
         if (elements.userProfileHeader) {
@@ -1545,7 +1480,7 @@
           </div>
         `;
         
-        elements.authSection.innerHTML = serverRequiredHTML + elements.authSection.innerHTML;
+        elements.authSection.innerHTML = serverRequiredHTML;
       }
 
       async validateSession() {
@@ -1697,34 +1632,28 @@
 
       updateUI() {
         if (this.isAuthenticated && this.userData) {
-          elements.userProfile.style.display = 'block';
-          elements.userProfileHeader.style.display = 'flex'; // Mostrar no header
-          elements.discordAuthBtn.style.display = 'none';
+          // Esconder a seção de auth e mostrar o perfil no header
+          elements.authSection.style.display = 'none';
+          elements.userProfileHeader.style.display = 'flex';
 
           // Use a função corrigida para obter o avatar
-          const avatarUrl = this.getAvatarUrl(this.userData.id, this.userData.avatar, 64);
-          const avatarUrlHeader = this.getAvatarUrl(this.userData.id, this.userData.avatar, 40);
+          const avatarUrl = this.getAvatarUrl(this.userData.id, this.userData.avatar, 40);
 
-          elements.userAvatar.src = avatarUrl;
-          elements.userAvatarHeader.src = avatarUrlHeader;
-          elements.userName.textContent = this.userData.global_name || this.userData.username;
+          elements.userAvatarHeader.src = avatarUrl;
           elements.userNameHeader.textContent = this.userData.global_name || this.userData.username;
-          elements.userDiscriminator.textContent = `@${this.userData.username}`;
           elements.userDiscriminatorHeader.textContent = `@${this.userData.username}`;
 
           const isServerMember = this.userStats ? this.userStats.is_server_member : this.userData.isServerMember;
           if (isServerMember) {
-            elements.serverStatus.innerHTML = '<span class="status-verified">✅ Membro do servidor</span>';
             this.updateGenerateButton(true);
           } else {
-            elements.serverStatus.innerHTML = '<span class="status-missing">❌ Fora do servidor</span>';
             this.updateGenerateButton(false);
           }
 
         } else {
-          elements.userProfile.style.display = 'none';
-          elements.userProfileHeader.style.display = 'none'; // Esconder no header
-          elements.discordAuthBtn.style.display = 'flex';
+          // Mostrar a seção de auth e esconder o perfil no header
+          elements.authSection.style.display = 'block';
+          elements.userProfileHeader.style.display = 'none';
           this.updateGenerateButton(false);
         }
       }
@@ -2320,7 +2249,8 @@
           'NO SERVIDOR': 'IN SERVER',
           'FORA DO SERVIDOR': 'NOT IN SERVER',
           '🔐 LOGIN REQUERIDO': '🔐 LOGIN REQUIRED',
-          '🎮 SERVIDOR NÃO VERIFICADO': '🎮 SERVER NOT VERIFIED'
+          '🎮 SERVIDOR NÃO VERIFICADO': '🎮 SERVER NOT VERIFIED',
+          'Sistema MIRA HQ Online': 'MIRA HQ System Online'
         };
 
         Object.keys(translations).forEach(key => {
