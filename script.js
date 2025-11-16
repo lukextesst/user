@@ -67,7 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
         isInCooldown: false,
         audioContext: null,
         isProcessing: false,
-        currentLanguage: 'pt'
+        currentLanguage: 'pt',
+        csrfToken: null
     };
     
     const translations = {
@@ -163,8 +164,8 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (this.sessionId) {
                 const isValid = await this.validateSession();
                 if (isValid) {
+                    await this.getCsrfToken();
                     await this.loadUserStats();
-                    await fetchUserKeyList();
                 }
             }
             
@@ -174,6 +175,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         isSessionExpired() {
             return Date.now() > this.sessionExpiresAt;
+        }
+        
+        async getCsrfToken() {
+            if (!this.sessionId) return;
+            try {
+                const response = await fetch(`${CONFIG.API_BASE_URL}/auth/session-data`, {
+                    headers: this.getAuthHeaders()
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        appState.csrfToken = data.csrf_token;
+                    }
+                }
+            } catch (error) {
+                console.error('Falha ao obter o token CSRF:', error);
+                showUIMessage('❌ Erro de segurança. Recarregue a página.', 'error');
+            }
         }
 
         setupEventListeners() {
@@ -228,12 +247,13 @@ document.addEventListener('DOMContentLoaded', () => {
             this.sessionId = data.session_id;
             this.userData = data.user;
             this.isAuthenticated = true;
-            this.sessionExpiresAt = Date.now() + (24 * 60 * 60 * 1000);
+            this.sessionExpiresAt = Date.now() + (CONFIG.SESSION_DURATION_SEC * 1000);
 
             localStorage.setItem('crewbot_session', this.sessionId);
             localStorage.setItem('crewbot_user', JSON.stringify(this.userData));
             localStorage.setItem('crewbot_session_expires', this.sessionExpiresAt.toString());
-
+            
+            await this.getCsrfToken();
             await this.loadUserStats();
             this.updateUI();
             showUIMessage(data.message, 'success');
@@ -259,12 +279,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     const data = await response.json();
                     if (data.status === 'success') {
                         this.userData = data.user;
-                        this.updateUI();
                         return true;
                     }
                 }
-            } catch (error) { console.error('Erro ao validar sessão:', error); }
-            return false;
+                await this.logout();
+                return false;
+            } catch (error) { 
+                console.error('Erro ao validar sessão:', error);
+                return false;
+            }
         }
 
         async loadUserStats() {
@@ -339,6 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             ['crewbot_session', 'crewbot_user', 'crewbot_stats', 'crewbot_session_expires'].forEach(k => localStorage.removeItem(k));
             Object.assign(this, { sessionId: null, userData: null, userStats: null, isAuthenticated: false, sessionExpiresAt: 0 });
+            appState.csrfToken = null;
             this.updateUI();
             this.hideUserModal();
             showUIMessage('👋 Logout realizado com sucesso', 'info');
@@ -362,6 +386,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.userNameHeader.textContent = this.userData.global_name || this.userData.username;
                 elements.userDiscriminatorHeader.textContent = `@${this.userData.username}`;
                 this.updateGenerateButton(this.userStats ? this.userStats.is_server_member : false);
+            } else {
+                 this.updateGenerateButton(false);
             }
         }
 
@@ -476,6 +502,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderKeysList() {
         elements.keysListUl.innerHTML = '';
+        if (!discordAuth.isAuthenticated) {
+             elements.keysListUl.innerHTML = '';
+             return;
+        }
         if (appState.userKeys.length === 0) {
             const li = document.createElement('li');
             li.textContent = translations[appState.currentLanguage].no_records;
@@ -544,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearInterval(appState.cooldownTimer);
                 appState.isInCooldown = false;
                 elements.cooldownSection.style.display = 'none';
-                elements.btnGen.disabled = false;
+                discordAuth.updateGenerateButton(discordAuth.userStats.is_server_member);
                 if (appState.soundEnabled) playSoundSequence([{freq: 440, duration: 100, type: 'sine'},{freq: 554, duration: 100, type: 'sine'},{freq: 659, duration: 200, type: 'sine'}]);
                 showUIMessage('✅ Sistema pronto!', 'success');
             }
@@ -570,9 +600,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!verificationToken || !validateToken(verificationToken)) {
                 throw new Error('Falha na verificação de segurança.');
             }
+            if (!appState.csrfToken) {
+                throw new Error('Sessão de segurança inválida. Por favor, recarregue a página.');
+            }
 
             showUIMessage('🛰️ Conectando com o servidor...', 'info', 0);
-            const headers = { 'X-Verification-Token': verificationToken, ...discordAuth.getAuthHeaders() };
+            const headers = { 
+                'X-Verification-Token': verificationToken,
+                'X-CSRF-Token': appState.csrfToken,
+                ...discordAuth.getAuthHeaders() 
+            };
             const response = await fetch(`${CONFIG.API_BASE_URL}/generate_key`, { method: 'GET', headers });
             const data = await response.json();
             
@@ -580,6 +617,10 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.removeItem(CONFIG.BACKEND_VERIFICATION_TOKEN_KEY);
 
             if (response.ok && data.status === 'success' && validateKey(data.key)) {
+                if (data.new_csrf_token) {
+                    appState.csrfToken = data.new_csrf_token;
+                }
+                
                 elements.keyValueEl.textContent = sanitizeInput(data.key);
                 elements.keyContainerEl.classList.add('visible');
                 elements.keyActions.style.display = 'flex';
@@ -614,20 +655,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (appState.soundEnabled) playSound(150, 800, 'sawtooth');
         } finally {
             setButtonLoading(elements.btnGen, false);
+            if (!appState.isInCooldown) {
+                 discordAuth.updateGenerateButton(discordAuth.userStats.is_server_member);
+            }
             appState.isProcessing = false;
         }
     }
 
     async function fetchUserKeyList() {
+        if (!discordAuth.isAuthenticated) {
+            appState.userKeys = [];
+            renderKeysList();
+            updateKeyLimitDisplay();
+            return;
+        }
         try {
             setButtonLoading(elements.btnView, true);
             showUIMessage('Consultando Log de IDs...', 'info', 0);
             const headers = discordAuth.getAuthHeaders();
-            if (!headers['X-Session-ID']) { // Adiciona uma verificação para não chamar se não estiver logado
-                // Silenciosamente não faz nada se não houver sessão
-                renderKeysList(); // Renderiza a lista vazia
-                return;
-            }
             const response = await fetch(`${CONFIG.API_BASE_URL}/user_keys`, { headers });
             const data = await response.json();
             if (response.ok && data.status === 'success') {
@@ -635,7 +680,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderKeysList();
                 updateKeyLimitDisplay();
                 showUIMessage(appState.userKeys.length > 0 ? 'Relatório carregado.' : 'Nenhuma ID encontrada.', 'info', 3000);
-            } else if (response.status !== 401) { // Só mostra erro se não for um erro de "não autorizado"
+            } else {
                 throw new Error(data.message || `FALHA ${response.status}.`);
             }
         } catch (error) {
@@ -720,9 +765,11 @@ document.addEventListener('DOMContentLoaded', () => {
         appState.currentLanguage = lang;
         localStorage.setItem('preferredLanguage', lang);
         
-        discordAuth.updateModal();
-        renderKeysList();
-        if(discordAuth.isAuthenticated) updateKeyLimitDisplay();
+        if(discordAuth.isAuthenticated) {
+            discordAuth.updateModal();
+            renderKeysList();
+            updateKeyLimitDisplay();
+        }
     }
 
     function toggleTranslation() {
@@ -822,6 +869,7 @@ document.addEventListener('DOMContentLoaded', () => {
     discordAuth.init().then(() => {
         checkAndProcessShortenerReturn();
         if (discordAuth.isAuthenticated) {
+            fetchUserKeyList();
             checkCooldownOnLoad();
         }
     });
