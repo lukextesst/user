@@ -164,6 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isValid = await this.validateSession();
                 if (isValid) {
                     await this.loadUserStats();
+                    await fetchUserKeyList(); // <-- ALTERAÇÃO APLICADA AQUI
                 }
             }
             
@@ -227,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
             this.sessionId = data.session_id;
             this.userData = data.user;
             this.isAuthenticated = true;
-            this.sessionExpiresAt = Date.now() + CONFIG.SESSION_DURATION_MS;
+            this.sessionExpiresAt = Date.now() + (24 * 60 * 60 * 1000);
 
             localStorage.setItem('crewbot_session', this.sessionId);
             localStorage.setItem('crewbot_user', JSON.stringify(this.userData));
