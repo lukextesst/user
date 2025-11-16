@@ -4,10 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
         SHORTENER_URL: 'https://link-target.net/63830/dfTOvKegYIZo',
         MAX_KEY_LIMIT: 5,
         COOLDOWN_DURATION: 30000,
-        RETURN_ACTION_PARAM: 'action',
-        RETURN_ACTION_VALUE: 'generate_from_shortener',
-        RETURN_STATUS_PARAM: 'status',
-        RETURN_STATUS_VALUE: 'completed',
         FLOW_TOKEN_PARAM: 'flow_token'
     };
 
@@ -212,11 +208,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     const data = await response.json();
                     if (data.status === 'success') {
-                        const cleanUrl = window.location.href.split('?')[0];
-                        window.history.replaceState({}, document.title, cleanUrl);
                         await this.handleAuthSuccess(data);
                     } else if (data.status === 'server_required') this.handleServerRequired(data);
                 } catch (error) { showUIMessage('❌ Falha na autenticação', 'error'); }
+                finally {
+                    const cleanUrl = window.location.href.split('?')[0];
+                    window.history.replaceState({}, document.title, cleanUrl);
+                }
             }
         }
 
@@ -613,10 +611,13 @@ document.addEventListener('DOMContentLoaded', () => {
             showUIMessage('⏳ Iniciando verificação de segurança...', 'info', 0);
             const response = await fetch(`${CONFIG.API_BASE_URL}/start-generation-flow`, { headers: discordAuth.getAuthHeaders() });
             const data = await response.json();
-            if (response.ok && data.status === 'success') {
+            if (response.ok && data.status === 'success' && data.dynamic_target_url) {
+                const encodedTargetUrl = encodeURIComponent(data.dynamic_target_url);
+                const finalLinkvertiseUrl = `${CONFIG.SHORTENER_URL}?target=${encodedTargetUrl}`;
+
                 showUIMessage('⏳ Redirecionando para o portal...', 'info', 5000);
-                setTimeout(() => { window.location.href = CONFIG.SHORTENER_URL; }, 1500);
-            } else { throw new Error(data.message || 'Erro desconhecido.'); }
+                setTimeout(() => { window.location.href = finalLinkvertiseUrl; }, 1500);
+            } else { throw new Error(data.message || 'Erro ao obter link de verificação.'); }
         } catch (error) {
             showUIMessage(`❌ Falha ao iniciar: ${error.message}`, 'error');
             setButtonLoading(elements.btnGen, false);
@@ -629,14 +630,13 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
                 const flowToken = urlParams.get(CONFIG.FLOW_TOKEN_PARAM);
-                const action = urlParams.get(CONFIG.RETURN_ACTION_PARAM);
-                const status = urlParams.get(CONFIG.RETURN_STATUS_PARAM);
     
-                if (action === CONFIG.RETURN_ACTION_VALUE && status === CONFIG.RETURN_STATUS_VALUE) {
-                    const cleanUrl = window.location.href.split('?')[0];
-                    window.history.replaceState({}, document.title, cleanUrl);
+                if (flowToken) {
                     showUIMessage('✅ Verificação completa! Solicitando ID...', 'success');
                     generateNewKey(flowToken);
+
+                    const cleanUrl = window.location.href.split('?')[0];
+                    window.history.replaceState({}, document.title, cleanUrl);
                 }
             } catch(e) { /* Ignore errors */ }
         });
