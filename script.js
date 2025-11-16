@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
         SHORTENER_URL: 'https://link-target.net/63830/dfTOvKegYIZo',
         MAX_KEY_LIMIT: 5,
         COOLDOWN_DURATION: 30000,
-        VERIFICATION_TOKEN_KEY: 'miraHqVerificationToken', // Chave para o localStorage
         RETURN_ACTION_PARAM: 'action',
         RETURN_ACTION_VALUE: 'generate_from_shortener',
         RETURN_STATUS_PARAM: 'status',
@@ -170,9 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
             checkAndProcessReturn();
         }
 
-        isSessionExpired() {
-            return Date.now() > this.sessionExpiresAt;
-        }
+        isSessionExpired() { return Date.now() > this.sessionExpiresAt; }
 
         setupEventListeners() {
             if (elements.discordAuthBtn) elements.discordAuthBtn.addEventListener('click', () => this.startAuth());
@@ -215,10 +212,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         await this.handleAuthSuccess(data);
                     } else if (data.status === 'server_required') this.handleServerRequired(data);
                 } catch (error) { showUIMessage('❌ Falha na autenticação', 'error'); }
-                finally {
-                    const cleanUrl = window.location.href.split('?')[0];
-                    window.history.replaceState({}, document.title, cleanUrl);
-                }
             }
         }
 
@@ -379,7 +372,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function sanitizeInput(input) { const div = document.createElement('div'); div.textContent = input; return div.innerHTML; }
     function validateKey(key) { return typeof key === 'string' && /^[A-Z0-9-]{19}$/.test(key); }
-    function validateToken(token) { return typeof token === 'string' && /^[a-zA-Z0-9\-_]{20,}$/.test(token); }
 
     function initAudioContext() { if (!appState.audioContext && appState.soundEnabled) { try { appState.audioContext = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { console.error("Audio Context not supported"); } } }
     function playSound(frequency, duration = 100, type = 'sine') {
@@ -507,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
 
-    async function generateNewKey(verificationToken) {
+    async function generateNewKey() {
         if (appState.isProcessing) return;
         appState.isProcessing = true;
         
@@ -520,18 +512,13 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.keyValueEl.textContent = 'VALIDANDO VERIFICAÇÃO...';
             elements.keyValueEl.classList.add('processing');
 
-            if (!verificationToken) {
-                throw new Error('Falha na verificação de segurança (token de fluxo ausente).');
-            }
-            
             showUIMessage('🛰️ Conectando com o servidor...', 'info', 0);
             const response = await fetch(`${CONFIG.API_BASE_URL}/generate_key`, { 
                 method: 'POST', 
                 headers: {
                     'Content-Type': 'application/json',
                     ...discordAuth.getAuthHeaders()
-                },
-                body: JSON.stringify({ verification_token: verificationToken })
+                }
             });
             const data = await response.json();
             elements.keyValueEl.classList.remove('processing');
@@ -617,11 +604,10 @@ document.addEventListener('DOMContentLoaded', () => {
             showUIMessage('⏳ Preparando verificação de segurança...', 'info', 0);
             const response = await fetch(`${CONFIG.API_BASE_URL}/initiate-verification`, { headers: discordAuth.getAuthHeaders() });
             const data = await response.json();
-            if (response.ok && data.status === 'success' && data.verification_token) {
-                localStorage.setItem(CONFIG.VERIFICATION_TOKEN_KEY, data.verification_token);
+            if (response.ok && data.status === 'success') {
                 showUIMessage('⏳ Redirecionando para o portal...', 'info', 5000);
                 setTimeout(() => { window.location.href = CONFIG.SHORTENER_URL; }, 1500);
-            } else { throw new Error(data.message || 'Erro ao obter token de verificação.'); }
+            } else { throw new Error(data.message || 'Erro ao iniciar verificação.'); }
         } catch (error) {
             showUIMessage(`❌ Falha ao iniciar: ${error.message}`, 'error');
             setButtonLoading(elements.btnGen, false);
@@ -637,16 +623,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const status = urlParams.get(CONFIG.RETURN_STATUS_PARAM);
     
                 if (action === CONFIG.RETURN_ACTION_VALUE && status === CONFIG.RETURN_STATUS_VALUE) {
-                    const verificationToken = localStorage.getItem(CONFIG.VERIFICATION_TOKEN_KEY);
-                    
-                    if (verificationToken) {
-                        localStorage.removeItem(CONFIG.VERIFICATION_TOKEN_KEY); // Remove immediately
-                        showUIMessage('✅ Verificação completa! Solicitando ID...', 'success');
-                        generateNewKey(verificationToken);
-                    } else {
-                        showUIMessage('⚠️ Falha na verificação. Token não encontrado. Tente novamente.', 'error');
-                    }
-                    
+                    showUIMessage('✅ Verificação completa! Reivindicando sua ID...', 'success');
+                    generateNewKey();
                     const cleanUrl = window.location.href.split('?')[0];
                     window.history.replaceState({}, document.title, cleanUrl);
                 }
