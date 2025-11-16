@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
         SHORTENER_URL: 'https://link-target.net/63830/dfTOvKegYIZo',
         MAX_KEY_LIMIT: 5,
         COOLDOWN_DURATION: 30000,
+        BACKEND_VERIFICATION_TOKEN_KEY: 'miraHqBackendVerificationToken',
         RETURN_ACTION_PARAM: 'action',
         RETURN_ACTION_VALUE: 'generate_from_shortener',
         RETURN_STATUS_PARAM: 'status',
@@ -165,11 +166,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     await this.loadUserStats();
                 }
             }
+            
             this.updateUI();
-            checkAndProcessReturn();
+            this.handleCallbackFromURL();
         }
 
-        isSessionExpired() { return Date.now() > this.sessionExpiresAt; }
+        isSessionExpired() {
+            return Date.now() > this.sessionExpiresAt;
+        }
 
         setupEventListeners() {
             if (elements.discordAuthBtn) elements.discordAuthBtn.addEventListener('click', () => this.startAuth());
@@ -191,7 +195,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch(`${CONFIG.API_BASE_URL}/auth/discord`);
                 const data = await response.json();
                 if (data.status === 'success') window.location.href = data.auth_url;
-            } catch (error) { showUIMessage('❌ Erro ao conectar com Discord', 'error'); }
+            } catch (error) {
+                showUIMessage('❌ Erro ao conectar com Discord', 'error');
+            }
         }
 
         async handleCallbackFromURL() {
@@ -208,10 +214,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         body: JSON.stringify({ code, state })
                     });
                     const data = await response.json();
-                    if (data.status === 'success') {
-                        await this.handleAuthSuccess(data);
-                    } else if (data.status === 'server_required') this.handleServerRequired(data);
-                } catch (error) { showUIMessage('❌ Falha na autenticação', 'error'); }
+                    if (data.status === 'success') await this.handleAuthSuccess(data);
+                    else if (data.status === 'server_required') this.handleServerRequired(data);
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } catch (error) {
+                    showUIMessage('❌ Falha na autenticação', 'error');
+                }
             }
         }
 
@@ -219,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
             this.sessionId = data.session_id;
             this.userData = data.user;
             this.isAuthenticated = true;
-            this.sessionExpiresAt = Date.now() + (CONFIG.SESSION_DURATION_SEC * 1000);
+            this.sessionExpiresAt = Date.now() + CONFIG.SESSION_DURATION_MS;
 
             localStorage.setItem('crewbot_session', this.sessionId);
             localStorage.setItem('crewbot_user', JSON.stringify(this.userData));
@@ -248,11 +256,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch(`${CONFIG.API_BASE_URL}/auth/me`, { headers: { 'X-Session-ID': this.sessionId } });
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.status === 'success') { this.userData = data.user; return true; }
+                    if (data.status === 'success') {
+                        this.userData = data.user;
+                        this.updateUI();
+                        return true;
+                    }
                 }
-                await this.logout();
-                return false;
-            } catch (error) { console.error('Erro ao validar sessão:', error); return false; }
+            } catch (error) { console.error('Erro ao validar sessão:', error); }
+            return false;
         }
 
         async loadUserStats() {
@@ -278,14 +289,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        hideUserModal() { if (elements.userProfileModal) elements.userProfileModal.style.display = 'none'; }
+        hideUserModal() {
+            if (elements.userProfileModal) elements.userProfileModal.style.display = 'none';
+        }
 
         updateModal() {
             if (!this.userData || !this.userStats) return;
+
             const avatarUrl = this.getAvatarUrl(this.userData.id, this.userData.avatar, 128);
             elements.modalUserAvatar.src = avatarUrl;
             elements.modalUserName.textContent = this.userData.global_name || this.userData.username;
             elements.modalUserDiscriminator.textContent = `@${this.userData.username}`;
+            
             const lang = appState.currentLanguage;
             if (this.userStats.is_server_member) {
                 elements.modalServerStatus.textContent = translations[lang].server_verified;
@@ -294,20 +309,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.modalServerStatus.textContent = translations[lang].server_missing;
                 elements.modalServerStatus.className = 'server-badge missing';
             }
+
             elements.statKeysToday.textContent = this.userStats.keys_today;
             elements.statTotalKeys.textContent = this.userStats.keys_total;
             elements.statActiveKeys.textContent = this.userStats.keys_active;
+            
             let memberText = 'N/A';
             if (this.userStats.member_since) {
                 const memberSince = new Date(this.userStats.member_since);
                 const now = new Date();
                 const diffTime = now.getTime() - memberSince.getTime();
                 const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                
                 if (diffDays < 1) memberText = translations[lang].member_since_now;
                 else if (diffDays === 1) memberText = translations[lang].member_since_day;
                 else memberText = translations[lang].member_since_days.replace('{days}', diffDays);
             }
             elements.statMemberSince.textContent = memberText;
+
             elements.modalGenerateBtn.disabled = !this.userStats.is_server_member;
         }
 
@@ -342,7 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.userNameHeader.textContent = this.userData.global_name || this.userData.username;
                 elements.userDiscriminatorHeader.textContent = `@${this.userData.username}`;
                 this.updateGenerateButton(this.userStats ? this.userStats.is_server_member : false);
-            } else { this.updateGenerateButton(false); }
+            }
         }
 
         updateGenerateButton(isServerMember) {
@@ -365,16 +384,34 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             applyTranslation(lang);
         }
-        getAuthHeaders() { return this.sessionId ? { 'X-Session-ID': this.sessionId } : {}; }
-        async refreshStats() { await this.loadUserStats(); this.updateUI(); }
+
+        getAuthHeaders() {
+            return this.sessionId ? { 'X-Session-ID': this.sessionId } : {};
+        }
+
+        async refreshStats() {
+            await this.loadUserStats();
+            this.updateUI();
+        }
     }
 
     const discordAuth = new DiscordAuthSystem();
 
-    function sanitizeInput(input) { const div = document.createElement('div'); div.textContent = input; return div.innerHTML; }
-    function validateKey(key) { return typeof key === 'string' && /^[A-Z0-9-]{19}$/.test(key); }
+    function sanitizeInput(input) {
+        const div = document.createElement('div');
+        div.textContent = input;
+        return div.innerHTML;
+    }
 
-    function initAudioContext() { if (!appState.audioContext && appState.soundEnabled) { try { appState.audioContext = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { console.error("Audio Context not supported"); } } }
+    function validateKey(key) { return typeof key === 'string' && /^[A-Z0-9-]{19}$/.test(key); }
+    function validateToken(token) { return typeof token === 'string' && /^[a-zA-Z0-9\-_]{20,}$/.test(token); }
+
+    function initAudioContext() {
+        if (!appState.audioContext && appState.soundEnabled) {
+            try { appState.audioContext = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { console.error("Audio Context not supported"); }
+        }
+    }
+
     function playSound(frequency, duration = 100, type = 'sine') {
         if (!appState.soundEnabled || !appState.audioContext || frequency < 80 || frequency > 2000) return;
         try {
@@ -391,20 +428,26 @@ document.addEventListener('DOMContentLoaded', () => {
             oscillator.stop(now + (duration / 1000));
         } catch(e) { console.error("Error playing sound", e); }
     }
+
     function playSoundSequence(sequence) {
         if (!appState.soundEnabled || !Array.isArray(sequence)) return;
-        sequence.forEach((note, index) => { if (note && typeof note.freq === 'number') setTimeout(() => playSound(note.freq, note.duration, note.type), index * 150); });
+        sequence.forEach((note, index) => {
+            if (note && typeof note.freq === 'number') setTimeout(() => playSound(note.freq, note.duration, note.type), index * 150);
+        });
     }
+
     function updateSoundToggle() {
         elements.soundToggle.textContent = appState.soundEnabled ? '🔊' : '🔇';
         elements.soundToggle.classList.toggle('active', appState.soundEnabled);
         localStorage.setItem('soundEnabled', appState.soundEnabled.toString());
     }
+
     function setButtonLoading(button, isLoading) {
         if (!button) return;
         button.classList.toggle('loading', isLoading);
         button.disabled = isLoading;
     }
+
     function showUIMessage(text, type = 'info', duration = 4500) {
         elements.messageEl.textContent = sanitizeInput(text.slice(0, 200));
         elements.messageEl.className = `message visible ${type}`;
@@ -413,24 +456,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateKeyLimitDisplay() {
-        if (!discordAuth.isAuthenticated) {
-             elements.keyLimitSection.style.display = 'none';
-             return;
-        }
         const keysUsed = appState.userKeys.length;
         const lang = appState.currentLanguage;
-        const limitText = translations[lang].key_limit_text.replace('{count}', keysUsed).replace('{max}', CONFIG.MAX_KEY_LIMIT).replace('{s}', keysUsed !== 1 ? 's' : '');
+        
+        const limitText = translations[lang].key_limit_text
+            .replace('{count}', keysUsed)
+            .replace('{max}', CONFIG.MAX_KEY_LIMIT)
+            .replace('{s}', keysUsed !== 1 ? 's' : '');
         elements.keyLimitText.textContent = limitText;
         elements.keyLimitHelper.textContent = translations[lang].key_limit_helper;
+
         elements.keyLimitInfo.className = 'key-limit-info';
         if (keysUsed >= CONFIG.MAX_KEY_LIMIT) elements.keyLimitInfo.classList.add('key-limit-full');
         else if (keysUsed >= CONFIG.MAX_KEY_LIMIT - 2) elements.keyLimitInfo.classList.add('key-limit-warning');
+        
         elements.keyLimitSection.style.display = 'block';
     }
 
     function renderKeysList() {
         elements.keysListUl.innerHTML = '';
-        if (!discordAuth.isAuthenticated) return;
         if (appState.userKeys.length === 0) {
             const li = document.createElement('li');
             li.textContent = translations[appState.currentLanguage].no_records;
@@ -470,8 +514,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!elements.achievementPopup) return;
         elements.achievementPopup.textContent = `🏆 ${sanitizeInput(text.slice(0, 100))}`;
         elements.achievementPopup.classList.add('show');
-        setTimeout(() => { elements.achievementPopup.classList.remove('show'); }, 3000);
+        setTimeout(() => {
+            elements.achievementPopup.classList.remove('show');
+        }, 3000);
     }
+
     function checkCooldownOnLoad() {
         const timeSince = Date.now() - appState.lastKeyGenerationTime;
         if (timeSince < CONFIG.COOLDOWN_DURATION && timeSince > 0) {
@@ -479,13 +526,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (remaining > 0) startCooldown(remaining);
         }
     }
+
     function startCooldown(seconds = 30) {
         if (appState.cooldownTimer) clearInterval(appState.cooldownTimer);
         appState.isInCooldown = true;
         elements.cooldownSection.style.display = 'block';
         elements.btnGen.disabled = true;
+        
         let remaining = Math.max(0, seconds);
         elements.cooldownTime.textContent = `${remaining}s`;
+        
         appState.cooldownTimer = setInterval(() => {
             remaining--;
             elements.cooldownTime.textContent = `${remaining}s`;
@@ -493,7 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearInterval(appState.cooldownTimer);
                 appState.isInCooldown = false;
                 elements.cooldownSection.style.display = 'none';
-                discordAuth.updateGenerateButton(discordAuth.userStats.is_server_member);
+                elements.btnGen.disabled = false;
                 if (appState.soundEnabled) playSoundSequence([{freq: 440, duration: 100, type: 'sine'},{freq: 554, duration: 100, type: 'sine'},{freq: 659, duration: 200, type: 'sine'}]);
                 showUIMessage('✅ Sistema pronto!', 'success');
             }
@@ -506,23 +556,27 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             initAudioContext();
+            if (appState.soundEnabled) playSoundSequence([{freq: 800, duration: 100, type: 'square'},{freq: 600, duration: 100, type: 'square'},{freq: 400, duration: 150, type: 'square'}]);
+
             setButtonLoading(elements.btnGen, true);
             elements.keyContainerEl.classList.remove('visible');
             elements.keyActions.style.display = 'none';
             elements.keyMetadata.style.display = 'none';
-            elements.keyValueEl.textContent = 'VALIDANDO VERIFICAÇÃO...';
+            elements.keyValueEl.textContent = 'AUTENTICANDO...';
             elements.keyValueEl.classList.add('processing');
+            
+            const verificationToken = localStorage.getItem(CONFIG.BACKEND_VERIFICATION_TOKEN_KEY);
+            if (!verificationToken || !validateToken(verificationToken)) {
+                throw new Error('Falha na verificação de segurança.');
+            }
 
             showUIMessage('🛰️ Conectando com o servidor...', 'info', 0);
-            const response = await fetch(`${CONFIG.API_BASE_URL}/generate_key`, { 
-                method: 'POST', 
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...discordAuth.getAuthHeaders()
-                }
-            });
+            const headers = { 'X-Verification-Token': verificationToken, ...discordAuth.getAuthHeaders() };
+            const response = await fetch(`${CONFIG.API_BASE_URL}/generate_key`, { method: 'GET', headers });
             const data = await response.json();
+            
             elements.keyValueEl.classList.remove('processing');
+            localStorage.removeItem(CONFIG.BACKEND_VERIFICATION_TOKEN_KEY);
 
             if (response.ok && data.status === 'success' && validateKey(data.key)) {
                 elements.keyValueEl.textContent = sanitizeInput(data.key);
@@ -554,37 +608,35 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             elements.keyValueEl.classList.remove('processing');
+            localStorage.removeItem(CONFIG.BACKEND_VERIFICATION_TOKEN_KEY);
             showUIMessage(`🚫 EMERGÊNCIA: ${error.message}`, 'error');
             if (appState.soundEnabled) playSound(150, 800, 'sawtooth');
         } finally {
-            appState.isProcessing = false;
             setButtonLoading(elements.btnGen, false);
-            if (!appState.isInCooldown && discordAuth.isAuthenticated) {
-                 discordAuth.updateGenerateButton(discordAuth.userStats.is_server_member);
-            }
+            appState.isProcessing = false;
         }
     }
 
     async function fetchUserKeyList() {
-        if (!discordAuth.isAuthenticated) {
-            appState.userKeys = [];
-            renderKeysList();
-            updateKeyLimitDisplay();
-            return;
-        }
         try {
             setButtonLoading(elements.btnView, true);
             showUIMessage('Consultando Log de IDs...', 'info', 0);
-            const response = await fetch(`${CONFIG.API_BASE_URL}/user_keys`, { headers: discordAuth.getAuthHeaders() });
+            const headers = discordAuth.getAuthHeaders();
+            const response = await fetch(`${CONFIG.API_BASE_URL}/user_keys`, { headers });
             const data = await response.json();
             if (response.ok && data.status === 'success') {
                 appState.userKeys = data.keys || [];
                 renderKeysList();
                 updateKeyLimitDisplay();
                 showUIMessage(appState.userKeys.length > 0 ? 'Relatório carregado.' : 'Nenhuma ID encontrada.', 'info', 3000);
-            } else { throw new Error(data.message || `FALHA ${response.status}.`); }
-        } catch (error) { showUIMessage(`❌ ${error.message}`, 'error'); }
-        finally { setButtonLoading(elements.btnView, false); }
+            } else {
+                throw new Error(data.message || `FALHA ${response.status}.`);
+            }
+        } catch (error) {
+            showUIMessage(`❌ ${error.message}`, 'error');
+        } finally {
+            setButtonLoading(elements.btnView, false);
+        }
     }
 
     async function initiateShortenerRedirect() {
@@ -602,40 +654,38 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             if (appState.soundEnabled) playSound(600, 100, 'square');
             setButtonLoading(elements.btnGen, true);
-            showUIMessage('⏳ Preparando verificação de segurança...', 'info', 0);
-            const response = await fetch(`${CONFIG.API_BASE_URL}/initiate-verification`, { headers: discordAuth.getAuthHeaders() });
+            showUIMessage('⏳ Iniciando verificação...', 'info', 0);
+            const response = await fetch(`${CONFIG.API_BASE_URL}/initiate-verification`, { method: 'GET' });
             const data = await response.json();
-            if (response.ok && data.status === 'success') {
+            if (response.ok && data.status === 'success' && validateToken(data.verification_token)) {
+                localStorage.setItem(CONFIG.BACKEND_VERIFICATION_TOKEN_KEY, data.verification_token);
                 showUIMessage('⏳ Redirecionando para o portal...', 'info', 5000);
                 setTimeout(() => { window.location.href = CONFIG.SHORTENER_URL; }, 1500);
-            } else { throw new Error(data.message || 'Erro ao iniciar verificação.'); }
+            } else {
+                throw new Error(data.message || 'Erro desconhecido.');
+            }
         } catch (error) {
             showUIMessage(`❌ Falha ao iniciar: ${error.message}`, 'error');
             setButtonLoading(elements.btnGen, false);
             appState.isProcessing = false;
         }
     }
-    
-    function checkAndProcessReturn() {
-        discordAuth.handleCallbackFromURL().then(() => {
-            try {
-                const urlParams = new URLSearchParams(window.location.search);
-                const action = urlParams.get(CONFIG.RETURN_ACTION_PARAM);
-                const status = urlParams.get(CONFIG.RETURN_STATUS_PARAM);
-    
-                if (action === CONFIG.RETURN_ACTION_VALUE && status === CONFIG.RETURN_STATUS_VALUE) {
-                    const cleanUrl = window.location.href.split('?')[0];
-                    window.history.replaceState({}, document.title, cleanUrl);
-                    
-                    if (discordAuth.isAuthenticated) {
-                        showUIMessage('✅ Verificação completa! Reivindicando sua ID...', 'success');
-                        generateNewKey();
-                    } else {
-                        showUIMessage('⚠️ Login necessário para completar o processo. Faça o login.', 'info');
-                    }
-                }
-            } catch(e) { /* Ignore errors */ }
-        });
+
+    function checkAndProcessShortenerReturn() {
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const action = urlParams.get(CONFIG.RETURN_ACTION_PARAM);
+            const status = urlParams.get(CONFIG.RETURN_STATUS_PARAM);
+            const backendToken = localStorage.getItem(CONFIG.BACKEND_VERIFICATION_TOKEN_KEY);
+
+            if (action === CONFIG.RETURN_ACTION_VALUE && status === CONFIG.RETURN_STATUS_VALUE && backendToken) {
+                showUIMessage('✅ Verificação completa! Solicitando ID...', 'success');
+                window.history.replaceState({}, document.title, window.location.pathname);
+                generateNewKey();
+            } else {
+                if(backendToken) localStorage.removeItem(CONFIG.BACKEND_VERIFICATION_TOKEN_KEY);
+            }
+        } catch(e) { /* Ignore errors */ }
     }
 
     function openDiscordWidget() {
@@ -644,6 +694,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.style.overflow = 'hidden';
         if (appState.soundEnabled) playSoundSequence([{freq: 523, duration: 100, type: 'sine'},{freq: 659, duration: 100, type: 'sine'}]);
     }
+
     function closeDiscordWidget() {
         elements.discordWidgetContainer.classList.remove('active');
         elements.overlay.classList.remove('active');
@@ -655,18 +706,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!translations[lang]) return;
         document.querySelectorAll('[data-translate-key]').forEach(el => {
             const key = el.getAttribute('data-translate-key');
-            if (translations[lang][key]) { el.textContent = translations[lang][key]; }
+            if (translations[lang][key]) {
+                el.textContent = translations[lang][key];
+            }
         });
         document.documentElement.lang = lang === 'en' ? 'en' : 'pt-BR';
         appState.currentLanguage = lang;
         localStorage.setItem('preferredLanguage', lang);
         
-        if(discordAuth.isAuthenticated) {
-            discordAuth.updateModal();
-            renderKeysList();
-            updateKeyLimitDisplay();
-        }
+        discordAuth.updateModal();
+        renderKeysList();
+        if(discordAuth.isAuthenticated) updateKeyLimitDisplay();
     }
+
     function toggleTranslation() {
         const newLang = appState.currentLanguage === 'pt' ? 'en' : 'pt';
         applyTranslation(newLang);
@@ -678,14 +730,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const ctx = canvas.getContext('2d');
         let stars = [];
         const numStars = Math.min(250, Math.floor((window.innerWidth * window.innerHeight) / 8000));
+        
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             stars = [];
             for (let i = 0; i < numStars; i++) {
-                stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, radius: Math.random() * 1.5, alpha: Math.random() * 0.5 + 0.5, dx: (Math.random() - 0.5) * 0.1, dy: (Math.random() - 0.5) * 0.1, alphaChange: (Math.random() - 0.5) * 0.01 });
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 1.5,
+                    alpha: Math.random() * 0.5 + 0.5,
+                    dx: (Math.random() - 0.5) * 0.1,
+                    dy: (Math.random() - 0.5) * 0.1,
+                    alphaChange: (Math.random() - 0.5) * 0.01
+                });
             }
         }
+
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             stars.forEach(star => {
@@ -704,6 +766,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             requestAnimationFrame(animate);
         }
+
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
         animate();
@@ -750,7 +813,12 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSoundToggle();
     setupCanvasStarfield();
     setupEventListeners();
-    discordAuth.init();
+    discordAuth.init().then(() => {
+        checkAndProcessShortenerReturn();
+        if (discordAuth.isAuthenticated) {
+            checkCooldownOnLoad();
+        }
+    });
     setupSessionWatcher();
     
     setTimeout(() => {
