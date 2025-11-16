@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isValid = await this.validateSession();
                 if (isValid) {
                     await this.loadUserStats();
-                    await fetchUserKeyList(); // <-- ALTERAÇÃO APLICADA AQUI
+                    await fetchUserKeyList();
                 }
             }
             
@@ -623,6 +623,11 @@ document.addEventListener('DOMContentLoaded', () => {
             setButtonLoading(elements.btnView, true);
             showUIMessage('Consultando Log de IDs...', 'info', 0);
             const headers = discordAuth.getAuthHeaders();
+            if (!headers['X-Session-ID']) { // Adiciona uma verificação para não chamar se não estiver logado
+                // Silenciosamente não faz nada se não houver sessão
+                renderKeysList(); // Renderiza a lista vazia
+                return;
+            }
             const response = await fetch(`${CONFIG.API_BASE_URL}/user_keys`, { headers });
             const data = await response.json();
             if (response.ok && data.status === 'success') {
@@ -630,7 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderKeysList();
                 updateKeyLimitDisplay();
                 showUIMessage(appState.userKeys.length > 0 ? 'Relatório carregado.' : 'Nenhuma ID encontrada.', 'info', 3000);
-            } else {
+            } else if (response.status !== 401) { // Só mostra erro se não for um erro de "não autorizado"
                 throw new Error(data.message || `FALHA ${response.status}.`);
             }
         } catch (error) {
