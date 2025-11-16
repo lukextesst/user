@@ -318,6 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (error) { console.error('Erro no logout:', error); }
             }
             ['crewbot_session', 'crewbot_user', 'crewbot_stats', 'crewbot_session_expires'].forEach(k => localStorage.removeItem(k));
+            Object.assign(this, { sessionId: null, userData: null, userStats: null, isAuthenticated: false, sessionExpiresAt: 0 });
             this.updateUI();
             this.hideUserModal();
             showUIMessage('👋 Logout realizado com sucesso', 'info');
@@ -623,10 +624,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const status = urlParams.get(CONFIG.RETURN_STATUS_PARAM);
     
                 if (action === CONFIG.RETURN_ACTION_VALUE && status === CONFIG.RETURN_STATUS_VALUE) {
-                    showUIMessage('✅ Verificação completa! Reivindicando sua ID...', 'success');
-                    generateNewKey();
                     const cleanUrl = window.location.href.split('?')[0];
                     window.history.replaceState({}, document.title, cleanUrl);
+                    
+                    if (discordAuth.isAuthenticated) {
+                        showUIMessage('✅ Verificação completa! Reivindicando sua ID...', 'success');
+                        generateNewKey();
+                    } else {
+                        showUIMessage('⚠️ Login necessário para completar o processo. Faça o login.', 'info');
+                    }
                 }
             } catch(e) { /* Ignore errors */ }
         });
