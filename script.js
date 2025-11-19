@@ -106,7 +106,32 @@ document.addEventListener('DOMContentLoaded', () => {
             copied_text: '✅ Copied!',
             member_since_now: 'Today',
             member_since_day: '1 day',
-            member_since_days: '{days} days'
+            member_since_days: '{days} days',
+            server_required_msg_title: '🎮 You must join our Discord server to generate keys!',
+            server_required_msg_btn: '🚀 Join Server',
+            server_required_msg_desc: 'After joining, refresh the page and login again.',
+            auth_connecting: '🔄 Connecting to Discord...',
+            auth_error: '❌ Error connecting to Discord',
+            auth_verifying: '🔐 Verifying authentication...',
+            auth_failed: '❌ Authentication failed',
+            logout_success: '👋 Logout successful',
+            processing_auth: 'AUTHENTICATING...',
+            connecting_server: '🛰️ Connecting to server...',
+            key_valid: '✅ Valid Access ID!',
+            first_access: 'First Access!',
+            veteran_crewmate: 'Veteran Crewmate!',
+            security_expert: 'Security Expert!',
+            emergency_error: '🚫 EMERGENCY: {error}',
+            consulting_log: 'Consulting ID Log...',
+            log_loaded: 'Report loaded.',
+            no_id_found: 'No ID found.',
+            wait_cooldown: '⏱️ WAIT: System in cooldown.',
+            limit_reached: '⚠️ LIMIT REACHED: Max 5 IDs.',
+            starting_verification: '⏳ Starting verification...',
+            redirecting_portal: '⏳ Redirecting to portal...',
+            unknown_error: 'Unknown error.',
+            verification_complete: '✅ Verification complete! Requesting ID...',
+            system_ready: '✅ System ready!'
         },
         pt: {
             main_title: 'Terminal de Acesso - MIRA HQ',
@@ -127,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
             records_title: 'Registros de IDs - Ciclo Atual',
             no_records: 'Nenhum registro de ID neste terminal para o ciclo atual.',
             support_button: '🆘 Suporte',
-            translate_button: '🌐 Translate Page',
+            translate_button: '🇺🇸 Translate to English',
             widget_title: 'Suporte - Discord',
             stat_keys_today: 'Keys Hoje',
             stat_total_keys: 'Total Keys',
@@ -142,7 +167,32 @@ document.addEventListener('DOMContentLoaded', () => {
             copied_text: '✅ Copiado!',
             member_since_now: 'Hoje',
             member_since_day: '1 dia',
-            member_since_days: '{days} dias'
+            member_since_days: '{days} dias',
+            server_required_msg_title: '🎮 Você precisa entrar no nosso servidor Discord para gerar keys!',
+            server_required_msg_btn: '🚀 Entrar no Servidor',
+            server_required_msg_desc: 'Depois de entrar, atualize a página e faça login novamente.',
+            auth_connecting: '🔄 Conectando com Discord...',
+            auth_error: '❌ Erro ao conectar com Discord',
+            auth_verifying: '🔐 Verificando autenticação...',
+            auth_failed: '❌ Falha na autenticação',
+            logout_success: '👋 Logout realizado com sucesso',
+            processing_auth: 'AUTENTICANDO...',
+            connecting_server: '🛰️ Conectando com o servidor...',
+            key_valid: '✅ ID de Acesso Válida!',
+            first_access: 'Primeiro Acesso!',
+            veteran_crewmate: 'Tripulante Veterano!',
+            security_expert: 'Especialista em Segurança!',
+            emergency_error: '🚫 EMERGÊNCIA: {error}',
+            consulting_log: 'Consulting Log de IDs...',
+            log_loaded: 'Relatório carregado.',
+            no_id_found: 'Nenhuma ID encontrada.',
+            wait_cooldown: '⏱️ AGUARDE: Sistema em cooldown.',
+            limit_reached: '⚠️ LIMITE ATINGIDO: Máximo de 5 IDs.',
+            starting_verification: '⏳ Iniciando verificação...',
+            redirecting_portal: '⏳ Redirecionando para o portal...',
+            unknown_error: 'Erro desconhecido.',
+            verification_complete: '✅ Verificação completa! Solicitando ID...',
+            system_ready: '✅ Sistema pronto!'
         }
     };
     
@@ -192,12 +242,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async startAuth() {
             try {
-                showUIMessage('🔄 Conectando com Discord...', 'info');
+                showUIMessage(translations[appState.currentLanguage].auth_connecting, 'info');
                 const response = await fetch(`${CONFIG.API_BASE_URL}/auth/discord`);
                 const data = await response.json();
                 if (data.status === 'success') window.location.href = data.auth_url;
             } catch (error) {
-                showUIMessage('❌ Erro ao conectar com Discord', 'error');
+                showUIMessage(translations[appState.currentLanguage].auth_error, 'error');
             }
         }
 
@@ -208,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (code && state) {
                 try {
-                    showUIMessage('🔐 Verificando autenticação...', 'info');
+                    showUIMessage(translations[appState.currentLanguage].auth_verifying, 'info');
                     const response = await fetch(`${CONFIG.API_BASE_URL}/auth/discord/callback`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -219,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     else if (data.status === 'server_required') this.handleServerRequired(data);
                     window.history.replaceState({}, document.title, window.location.pathname);
                 } catch (error) {
-                    showUIMessage('❌ Falha na autenticação', 'error');
+                    showUIMessage(translations[appState.currentLanguage].auth_failed, 'error');
                 }
             }
         }
@@ -242,12 +292,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         handleServerRequired(data) {
+            const lang = appState.currentLanguage;
             showUIMessage(data.message, 'error', 10000);
             elements.authSection.innerHTML = `
               <div class="server-required-message">
-                <p>🎮 Você precisa entrar no nosso servidor Discord para gerar keys!</p>
-                <a href="${data.discord_invite}" target="_blank" class="server-invite-btn">🚀 Entrar no Servidor</a>
-                <p style="margin-top: 0.5rem; font-size: 0.9em;">Depois de entrar, atualize a página e faça login novamente.</p>
+                <p>${translations[lang].server_required_msg_title}</p>
+                <a href="${data.discord_invite}" target="_blank" class="server-invite-btn">${translations[lang].server_required_msg_btn}</a>
+                <p style="margin-top: 0.5rem; font-size: 0.9em;">${translations[lang].server_required_msg_desc}</p>
               </div>`;
         }
 
@@ -342,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
             Object.assign(this, { sessionId: null, userData: null, userStats: null, isAuthenticated: false, sessionExpiresAt: 0 });
             this.updateUI();
             this.hideUserModal();
-            showUIMessage('👋 Logout realizado com sucesso', 'info');
+            showUIMessage(translations[appState.currentLanguage].logout_success, 'info');
             await fetchUserKeyList();
         }
 
@@ -548,7 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.cooldownSection.style.display = 'none';
                 elements.btnGen.disabled = false;
                 if (appState.soundEnabled) playSoundSequence([{freq: 440, duration: 100, type: 'sine'},{freq: 554, duration: 100, type: 'sine'},{freq: 659, duration: 200, type: 'sine'}]);
-                showUIMessage('✅ Sistema pronto!', 'success');
+                showUIMessage(translations[appState.currentLanguage].system_ready, 'success');
             }
         }, 1000);
     }
@@ -565,7 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.keyContainerEl.classList.remove('visible');
             elements.keyActions.style.display = 'none';
             elements.keyMetadata.style.display = 'none';
-            elements.keyValueEl.textContent = 'AUTENTICANDO...';
+            elements.keyValueEl.textContent = translations[appState.currentLanguage].processing_auth;
             elements.keyValueEl.classList.add('processing');
             
             const verificationToken = localStorage.getItem(CONFIG.BACKEND_VERIFICATION_TOKEN_KEY);
@@ -573,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Falha na verificação de segurança.');
             }
 
-            showUIMessage('🛰️ Conectando com o servidor...', 'info', 0);
+            showUIMessage(translations[appState.currentLanguage].connecting_server, 'info', 0);
             const headers = { 'X-Verification-Token': verificationToken, ...discordAuth.getAuthHeaders() };
             const response = await fetch(`${CONFIG.API_BASE_URL}/generate_key`, { method: 'GET', headers });
             const data = await response.json();
@@ -594,11 +645,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('lastKeyGenerationTime', appState.lastKeyGenerationTime.toString());
                 
                 if (appState.soundEnabled) playSoundSequence([{freq: 523, duration: 150, type: 'sine'},{freq: 659, duration: 150, type: 'sine'},{freq: 784, duration: 200, type: 'sine'},{freq: 1047, duration: 250, type: 'sine'}]);
-                showUIMessage('✅ ID de Acesso Válida!', 'success');
+                showUIMessage(translations[appState.currentLanguage].key_valid, 'success');
                 
-                if (appState.keyGenerationCount === 1) showAchievement('Primeiro Acesso!');
-                else if (appState.keyGenerationCount === 5) showAchievement('Tripulante Veterano!');
-                else if (appState.keyGenerationCount === 10) showAchievement('Especialista em Segurança!');
+                if (appState.keyGenerationCount === 1) showAchievement(translations[appState.currentLanguage].first_access);
+                else if (appState.keyGenerationCount === 5) showAchievement(translations[appState.currentLanguage].veteran_crewmate);
+                else if (appState.keyGenerationCount === 10) showAchievement(translations[appState.currentLanguage].security_expert);
                 
                 await fetchUserKeyList();
                 await discordAuth.refreshStats();
@@ -612,7 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             elements.keyValueEl.classList.remove('processing');
             localStorage.removeItem(CONFIG.BACKEND_VERIFICATION_TOKEN_KEY);
-            showUIMessage(`🚫 EMERGÊNCIA: ${error.message}`, 'error');
+            showUIMessage(translations[appState.currentLanguage].emergency_error.replace('{error}', error.message), 'error');
             if (appState.soundEnabled) playSound(150, 800, 'sawtooth');
         } finally {
             setButtonLoading(elements.btnGen, false);
@@ -623,7 +674,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchUserKeyList() {
         try {
             setButtonLoading(elements.btnView, true);
-            showUIMessage('Consultando Log de IDs...', 'info', 0);
+            showUIMessage(translations[appState.currentLanguage].consulting_log, 'info', 0);
             const headers = discordAuth.getAuthHeaders();
             const response = await fetch(`${CONFIG.API_BASE_URL}/user_keys`, { headers });
             const data = await response.json();
@@ -631,7 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 appState.userKeys = data.keys || [];
                 renderKeysList();
                 updateKeyLimitDisplay();
-                showUIMessage(appState.userKeys.length > 0 ? 'Relatório carregado.' : 'Nenhuma ID encontrada.', 'info', 3000);
+                showUIMessage(appState.userKeys.length > 0 ? translations[appState.currentLanguage].log_loaded : translations[appState.currentLanguage].no_id_found, 'info', 3000);
             } else {
                 throw new Error(data.message || `FALHA ${response.status}.`);
             }
@@ -644,12 +695,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function initiateShortenerRedirect() {
         if (appState.isInCooldown || (elements.btnGen && elements.btnGen.disabled) || appState.isProcessing) {
-            showUIMessage('⏱️ AGUARDE: Sistema em cooldown.', 'error');
+            showUIMessage(translations[appState.currentLanguage].wait_cooldown, 'error');
             if (appState.soundEnabled) playSound(200, 300, 'sawtooth');
             return;
         }
         if (appState.userKeys.length >= CONFIG.MAX_KEY_LIMIT) {
-            showUIMessage('⚠️ LIMITE ATINGIDO: Máximo de 5 IDs.', 'error');
+            showUIMessage(translations[appState.currentLanguage].limit_reached, 'error');
             if (appState.soundEnabled) playSound(200, 500, 'sawtooth');
             return;
         }
@@ -657,15 +708,15 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             if (appState.soundEnabled) playSound(600, 100, 'square');
             setButtonLoading(elements.btnGen, true);
-            showUIMessage('⏳ Iniciando verificação...', 'info', 0);
+            showUIMessage(translations[appState.currentLanguage].starting_verification, 'info', 0);
             const response = await fetch(`${CONFIG.API_BASE_URL}/initiate-verification`, { method: 'GET' });
             const data = await response.json();
             if (response.ok && data.status === 'success' && validateToken(data.verification_token)) {
                 localStorage.setItem(CONFIG.BACKEND_VERIFICATION_TOKEN_KEY, data.verification_token);
-                showUIMessage('⏳ Redirecionando para o portal...', 'info', 5000);
+                showUIMessage(translations[appState.currentLanguage].redirecting_portal, 'info', 5000);
                 setTimeout(() => { window.location.href = CONFIG.SHORTENER_URL; }, 1500);
             } else {
-                throw new Error(data.message || 'Erro desconhecido.');
+                throw new Error(data.message || translations[appState.currentLanguage].unknown_error);
             }
         } catch (error) {
             showUIMessage(`❌ Falha ao iniciar: ${error.message}`, 'error');
@@ -682,7 +733,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const backendToken = localStorage.getItem(CONFIG.BACKEND_VERIFICATION_TOKEN_KEY);
 
             if (action === CONFIG.RETURN_ACTION_VALUE && status === CONFIG.RETURN_STATUS_VALUE && backendToken) {
-                showUIMessage('✅ Verificação completa! Solicitando ID...', 'success');
+                showUIMessage(translations[appState.currentLanguage].verification_complete, 'success');
                 window.history.replaceState({}, document.title, window.location.pathname);
                 generateNewKey();
             } else {
