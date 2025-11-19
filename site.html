@@ -4,9 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="description" content="Sistema de Geração de Keys - Among Us Mod Menu">
+    <meta name="theme-color" content="#1a2433">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <title>MIRA HQ - Terminal de Acesso</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style_glitch.css">
 </head>
 <body>
   <canvas id="starfield-canvas"></canvas>
@@ -15,7 +18,7 @@
   <div class="main-header">
     <div class="header-content">
       <header>
-        <h1 data-translate-key="main_title">Terminal de Acesso - MIRA HQ</h1>
+        <h1 data-translate-key="main_title" data-text="Terminal de Acesso - MIRA HQ">Terminal de Acesso - MIRA HQ</h1>
         <p class="subtitle" data-translate-key="main_subtitle">🧑‍🚀 Tripulante, requisite sua Identificação de Acesso ou verifique os registros do ciclo atual. Mantenha-se alerta!</p>
       </header>
     </div>
@@ -43,9 +46,7 @@
 
     <div id="userContent" class="user-content-wrapper" style="display: none;">
       <div class="controls-section">
-        <button class="control-button" id="soundToggle" title="Alternar efeitos sonoros" aria-label="Alternar efeitos sonoros">
-          🔊
-        </button>
+        <!-- Botão de som removido ou estilizado melhor se desejar -->
       </div>
 
       <div class="cooldown-section" id="cooldownSection" style="display: none;">
@@ -65,7 +66,7 @@
       
       <div class="button-group">
         <button id="generateBtn" title="Requisitar nova ID de Acesso via verificação">
-          <span class="button-text" data-translate-key="generate_button">⚠️ INICIAR TASK: Chave De Ativação 🔑</span>
+          <span class="button-text" data-translate-key="generate_button">⚠️ INICIAR TASK: REGISTRO</span>
           <span class="spinner"></span>
         </button>
         <button id="viewKeysBtn" title="Consultar IDs de Tripulantes Ativos">

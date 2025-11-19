@@ -27,6 +27,21 @@ html, body {
   overflow-x: hidden;
   width: 100%;
 }
+/* Scrollbar Global */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background-color);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--panel-border-color);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--panel-highlight-color);
+}
+
 body {
   font-family: var(--font-body);
   background-color: var(--background-color);
@@ -392,6 +407,12 @@ button.loading .button-text { display: none; }
   word-break: break-all; letter-spacing: 2px;
   text-shadow: 0 0 15px var(--key-id-color), 0 0 20px var(--key-id-color);
   padding: 0.3rem; line-height: 1.4;
+  transition: all 0.3s ease;
+}
+.key-value:hover {
+    color: #fff;
+    text-shadow: 0 0 20px var(--key-id-color), 0 0 30px var(--key-id-color);
+    cursor: text;
 }
 .key-value.processing {
     color: var(--text-color-medium); font-style: italic;
