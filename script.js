@@ -297,7 +297,8 @@ document.addEventListener('DOMContentLoaded', () => {
         updateModal() {
             if (!this.userData || !this.userStats) return;
 
-            const avatarUrl = this.getAvatarUrl(this.userData.id, this.userData.avatar, 128);
+            const userId = this.userData.id || this.userData.userId;
+            const avatarUrl = this.getAvatarUrl(userId, this.userData.avatar, 128);
             elements.modalUserAvatar.src = avatarUrl;
             elements.modalUserName.textContent = this.userData.global_name || this.userData.username;
             elements.modalUserDiscriminator.textContent = `@${this.userData.username}`;
@@ -357,7 +358,8 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.userProfileHeader.style.display = isAuthenticated ? 'flex' : 'none';
 
             if (isAuthenticated) {
-                const avatarUrl = this.getAvatarUrl(this.userData.id, this.userData.avatar, 40);
+                const userId = this.userData.id || this.userData.userId;
+                const avatarUrl = this.getAvatarUrl(userId, this.userData.avatar, 40);
                 elements.userAvatarHeader.src = avatarUrl;
                 elements.userNameHeader.textContent = this.userData.global_name || this.userData.username;
                 elements.userDiscriminatorHeader.textContent = `@${this.userData.username}`;
