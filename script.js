@@ -2,18 +2,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const CONFIG = {
         // URL da API já definida para produção
         API_BASE_URL: 'https://keygenx-1.onrender.com',
-        SHORTENER_URL: 'https://link-target.net/63830/among-us-modmenu-key1',
+        SHORTENER_URLS: {
+            1: 'https://link-target.net/63830/among-us-modmenu-key1',
+            2: 'https://link-target.net/63830/DXuC2z7SQT1o',
+            3: 'https://link-hub.net/63830/tQtGDD3vTskf'
+        },
         MAX_KEY_LIMIT: 5,
         COOLDOWN_DURATION: 30000,
         BACKEND_VERIFICATION_TOKEN_KEY: 'miraHqBackendVerificationToken',
-        RETURN_ACTION_PARAM: 'action',
-        RETURN_ACTION_VALUE: 'generate_from_shortener',
-        RETURN_STATUS_PARAM: 'status',
-        RETURN_STATUS_VALUE: 'completed'
+        // Configuração dos Retornos (O que o site espera receber do encurtador)
+        RETURN_CONFIG: {
+            1: { action: 'complete_m1', status: 'success' },
+            2: { action: 'complete_m2', status: 'success' },
+            3: { action: 'complete_m3', status: 'success' }
+        }
     };
 
     const elements = {
-        btnGen: document.getElementById('generateBtn'),
+        btnOpenMethodMenu: document.getElementById('btnOpenMethodMenu'),
+        methodSelectionModal: document.getElementById('methodSelectionModal'),
+        closeMethodModal: document.getElementById('closeMethodModal'),
+        btnMethod1: document.getElementById('btnMethod1'),
+        btnMethod2: document.getElementById('btnMethod2'),
+        btnMethod3: document.getElementById('btnMethod3'),
         btnView: document.getElementById('viewKeysBtn'),
         keyContainerEl: document.getElementById('keyContainer'),
         keyValueEl: document.getElementById('keyValue'),
@@ -56,7 +67,11 @@ document.addEventListener('DOMContentLoaded', () => {
         userNameHeader: document.getElementById('userNameHeader'),
         userDiscriminatorHeader: document.getElementById('userDiscriminatorHeader'),
         authSection: document.getElementById('authSection'),
-        userContent: document.getElementById('userContent')
+        authSection: document.getElementById('authSection'),
+        userContent: document.getElementById('userContent'),
+        helpButton: document.getElementById('helpButton'),
+        tutorialModal: document.getElementById('tutorialModal'),
+        closeTutorialModal: document.getElementById('closeTutorialModal')
     };
 
     const appState = {
@@ -68,9 +83,9 @@ document.addEventListener('DOMContentLoaded', () => {
         isInCooldown: false,
         audioContext: null,
         isProcessing: false,
-        currentLanguage: 'pt'
+        currentLanguage: navigator.language.startsWith('pt') ? 'pt' : 'en'
     };
-    
+
     const translations = {
         en: {
             main_title: 'Access Terminal - MIRA HQ',
@@ -131,7 +146,17 @@ document.addEventListener('DOMContentLoaded', () => {
             redirecting_portal: '⏳ Redirecting to portal...',
             unknown_error: 'Unknown error.',
             verification_complete: '✅ Verification complete! Requesting ID...',
-            system_ready: '✅ System ready!'
+            verification_complete: '✅ Verification complete! Requesting ID...',
+            system_ready: '✅ System ready!',
+            tutorial_title: 'How to Activate',
+            step_1_title: 'Open Among Us',
+            step_1_desc: 'Start the game with the mod installed.',
+            step_2_title: 'Press F1',
+            step_2_desc: 'In the main menu or lobby, press F1 to open the panel.',
+            step_3_title: 'Paste Key',
+            step_3_desc: 'Copy the key generated here and paste it into the mod activation field.',
+            help_button_title: 'How to use?',
+            view_keys_title: 'Consult Active Crewmate IDs'
         },
         pt: {
             main_title: 'Terminal de Acesso - MIRA HQ',
@@ -192,10 +217,19 @@ document.addEventListener('DOMContentLoaded', () => {
             redirecting_portal: '⏳ Redirecionando para o portal...',
             unknown_error: 'Erro desconhecido.',
             verification_complete: '✅ Verificação completa! Solicitando ID...',
-            system_ready: '✅ Sistema pronto!'
+            system_ready: '✅ Sistema pronto!',
+            tutorial_title: 'Como Ativar o Mod',
+            step_1_title: 'Abra o Among Us',
+            step_1_desc: 'Inicie o jogo com o mod instalado.',
+            step_2_title: 'Aperte F1',
+            step_2_desc: 'No menu principal ou lobby, pressione a tecla F1 para abrir o painel.',
+            step_3_title: 'Cole a Key',
+            step_3_desc: 'Copie a key gerada aqui e cole no campo de ativação do mod.',
+            help_button_title: 'Como usar?',
+            view_keys_title: 'Consultar IDs de Tripulantes Ativos'
         }
     };
-    
+
     class DiscordAuthSystem {
         constructor() {
             this.sessionId = localStorage.getItem('crewbot_session');
@@ -208,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
         async init() {
             this.setupEventListeners();
             this.setupModal();
-            
+
             if (this.isSessionExpired()) {
                 await this.logout();
             } else if (this.sessionId) {
@@ -217,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await this.loadUserStats();
                 }
             }
-            
+
             this.updateUI();
             this.handleCallbackFromURL();
         }
@@ -237,7 +271,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (elements.userProfileModal) elements.userProfileModal.addEventListener('click', (e) => { if (e.target === elements.userProfileModal) this.hideUserModal(); });
             if (elements.modalGenerateBtn) elements.modalGenerateBtn.addEventListener('click', () => { this.hideUserModal(); initiateShortenerRedirect(); });
             if (elements.modalLogoutBtn) elements.modalLogoutBtn.addEventListener('click', () => { this.hideUserModal(); this.logout(); });
+            if (elements.modalLogoutBtn) elements.modalLogoutBtn.addEventListener('click', () => { this.hideUserModal(); this.logout(); });
             document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && elements.userProfileModal.style.display === 'block') this.hideUserModal(); });
+
+            if (elements.helpButton) elements.helpButton.addEventListener('click', () => { elements.tutorialModal.style.display = 'block'; });
+            if (elements.closeTutorialModal) elements.closeTutorialModal.addEventListener('click', () => { elements.tutorialModal.style.display = 'none'; });
+            window.addEventListener('click', (e) => { if (e.target === elements.tutorialModal) elements.tutorialModal.style.display = 'none'; });
         }
 
         async startAuth() {
@@ -287,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await this.loadUserStats();
             this.updateUI();
             showUIMessage(data.message, 'success');
-            if (appState.soundEnabled) playSoundSequence([{freq: 523, duration: 100, type: 'sine'}, {freq: 659, duration: 100, type: 'sine'}, {freq: 784, duration: 200, type: 'sine'}]);
+            if (appState.soundEnabled) playSoundSequence([{ freq: 523, duration: 100, type: 'sine' }, { freq: 659, duration: 100, type: 'sine' }, { freq: 784, duration: 200, type: 'sine' }]);
             await fetchUserKeyList();
         }
 
@@ -306,6 +345,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!this.sessionId) return false;
             try {
                 const response = await fetch(`${CONFIG.API_BASE_URL}/auth/me`, { headers: { 'X-Session-ID': this.sessionId } });
+                if (response.status === 401) {
+                    console.warn('Sessão expirada (401) no validateSession. Realizando logout...');
+                    await this.logout();
+                    return false;
+                }
                 if (response.ok) {
                     const data = await response.json();
                     if (data.status === 'success') {
@@ -322,6 +366,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!this.sessionId) return;
             try {
                 const response = await fetch(`${CONFIG.API_BASE_URL}/auth/user-stats`, { headers: { 'X-Session-ID': this.sessionId } });
+                if (response.status === 401) {
+                    console.warn('Sessão expirada (401) no loadUserStats. Realizando logout...');
+                    await this.logout();
+                    return;
+                }
                 if (response.ok) {
                     const data = await response.json();
                     if (data.status === 'success') {
@@ -353,7 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.modalUserAvatar.src = avatarUrl;
             elements.modalUserName.textContent = this.userData.global_name || this.userData.username;
             elements.modalUserDiscriminator.textContent = `@${this.userData.username}`;
-            
+
             const lang = appState.currentLanguage;
             if (this.userStats.is_server_member) {
                 elements.modalServerStatus.textContent = translations[lang].server_verified;
@@ -366,14 +415,14 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.statKeysToday.textContent = this.userStats.keys_today;
             elements.statTotalKeys.textContent = this.userStats.keys_total;
             elements.statActiveKeys.textContent = this.userStats.keys_active;
-            
+
             let memberText = 'N/A';
             if (this.userStats.member_since) {
                 const memberSince = new Date(this.userStats.member_since);
                 const now = new Date();
                 const diffTime = now.getTime() - memberSince.getTime();
                 const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-                
+
                 if (diffDays < 1) memberText = translations[lang].member_since_now;
                 else if (diffDays === 1) memberText = translations[lang].member_since_day;
                 else memberText = translations[lang].member_since_days.replace('{days}', diffDays);
@@ -419,24 +468,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         updateGenerateButton(isServerMember) {
-            if (!elements.btnGen) return;
-            const lang = appState.currentLanguage;
-            const buttonTextEl = elements.btnGen.querySelector('.button-text');
-            if (isServerMember && this.isAuthenticated) {
-                elements.btnGen.disabled = false;
-                elements.btnGen.title = 'Gerar nova ID de Acesso';
-                if(buttonTextEl) buttonTextEl.setAttribute('data-translate-key', 'generate_button');
-            } else {
-                elements.btnGen.disabled = true;
-                if (!this.isAuthenticated) {
-                    elements.btnGen.title = 'Faça login com Discord para gerar keys';
-                    if(buttonTextEl) buttonTextEl.setAttribute('data-translate-key', 'login_required_button');
+            // Update all 3 method buttons
+            if (elements.btnOpenMethodMenu) {
+                const btn = elements.btnOpenMethodMenu;
+                const lang = appState.currentLanguage; // Define lang here
+                if (isServerMember && this.isAuthenticated) {
+                    btn.disabled = false;
+                    btn.title = 'Iniciar Task';
                 } else {
-                    elements.btnGen.title = 'Entre no servidor Discord para gerar keys';
-                    if(buttonTextEl) buttonTextEl.setAttribute('data-translate-key', 'server_required_button');
+                    btn.disabled = true;
+                    if (!this.isAuthenticated) {
+                        btn.title = 'Faça login com Discord para gerar keys';
+                    } else {
+                        btn.title = 'Entre no servidor Discord para gerar keys';
+                    }
                 }
             }
-            applyTranslation(lang);
+            // applyTranslation(lang); // This should not be here, it's called globally
         }
 
         getAuthHeaders() {
@@ -451,18 +499,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const discordAuth = new DiscordAuthSystem();
 
-    function sanitizeInput(input) {
-        const div = document.createElement('div');
-        div.textContent = input;
-        return div.innerHTML;
-    }
+    // sanitizeInput removido pois textContent já é seguro e isso causava escape duplo.
 
     function validateKey(key) { return typeof key === 'string' && /^[A-Z0-9-]{19}$/.test(key); }
     function validateToken(token) { return typeof token === 'string' && /^[a-zA-Z0-9\-_]{20,}$/.test(token); }
 
     function initAudioContext() {
         if (!appState.audioContext && appState.soundEnabled) {
-            try { appState.audioContext = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { console.error("Audio Context not supported"); }
+            try { appState.audioContext = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { console.error("Audio Context not supported"); }
         }
     }
 
@@ -480,7 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
             gainNode.gain.exponentialRampToValueAtTime(0.001, now + (duration / 1000));
             oscillator.start(now);
             oscillator.stop(now + (duration / 1000));
-        } catch(e) { console.error("Error playing sound", e); }
+        } catch (e) { console.error("Error playing sound", e); }
     }
 
     function playSoundSequence(sequence) {
@@ -502,8 +546,11 @@ document.addEventListener('DOMContentLoaded', () => {
         button.disabled = isLoading;
     }
 
+    // setAllMethodsLoading removed as we now use the main button loading state or modal logic
+
+
     function showUIMessage(text, type = 'info', duration = 4500) {
-        elements.messageEl.textContent = sanitizeInput(text.slice(0, 200));
+        elements.messageEl.textContent = text.slice(0, 200);
         elements.messageEl.className = `message visible ${type}`;
         if (elements.messageEl.timeoutId) clearTimeout(elements.messageEl.timeoutId);
         if (duration > 0) elements.messageEl.timeoutId = setTimeout(() => { elements.messageEl.className = 'message'; }, duration);
@@ -512,7 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateKeyLimitDisplay() {
         const keysUsed = appState.userKeys.length;
         const lang = appState.currentLanguage;
-        
+
         const limitText = translations[lang].key_limit_text
             .replace('{count}', keysUsed)
             .replace('{max}', CONFIG.MAX_KEY_LIMIT)
@@ -523,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.keyLimitInfo.className = 'key-limit-info';
         if (keysUsed >= CONFIG.MAX_KEY_LIMIT) elements.keyLimitInfo.classList.add('key-limit-full');
         else if (keysUsed >= CONFIG.MAX_KEY_LIMIT - 2) elements.keyLimitInfo.classList.add('key-limit-warning');
-        
+
         elements.keyLimitSection.style.display = 'block';
     }
 
@@ -539,10 +586,37 @@ document.addEventListener('DOMContentLoaded', () => {
         appState.userKeys.forEach(key => {
             if (validateKey(key)) {
                 const li = document.createElement('li');
-                li.textContent = sanitizeInput(key);
+                li.textContent = key;
                 elements.keysListUl.appendChild(li);
             }
         });
+    }
+
+    function createConfetti(x, y) {
+        const colors = ['#ffcb74', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6'];
+        for (let i = 0; i < 30; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = x + 'px';
+            confetti.style.top = y + 'px';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = 2 + Math.random() * 2;
+            const tx = Math.cos(angle) * 100 * velocity;
+            const ty = Math.sin(angle) * 100 * velocity;
+
+            confetti.animate([
+                { transform: 'translate(0, 0) rotate(0deg)', opacity: 1 },
+                { transform: `translate(${tx}px, ${ty}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+            ], {
+                duration: 1000 + Math.random() * 1000,
+                easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                fill: 'forwards'
+            }).onfinish = () => confetti.remove();
+
+            document.body.appendChild(confetti);
+        }
     }
 
     async function copyToClipboard() {
@@ -553,7 +627,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const copyButtonSpan = elements.copyButton.querySelector('span');
             if (copyButtonSpan) copyButtonSpan.textContent = translations[appState.currentLanguage].copied_text;
             elements.copyButton.classList.add('copied');
-            if (appState.soundEnabled) playSoundSequence([{freq: 800, duration: 100, type: 'sine'}, {freq: 1000, duration: 150, type: 'sine'}]);
+            if (appState.soundEnabled) playSoundSequence([{ freq: 800, duration: 100, type: 'sine' }, { freq: 1000, duration: 150, type: 'sine' }]);
+
+            const rect = elements.copyButton.getBoundingClientRect();
+            createConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+
             setTimeout(() => {
                 if (copyButtonSpan) copyButtonSpan.textContent = translations[appState.currentLanguage].copy_button;
                 elements.copyButton.classList.remove('copied');
@@ -563,10 +641,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (appState.soundEnabled) playSound(200, 200, 'sawtooth');
         }
     }
-    
+
     function showAchievement(text) {
         if (!elements.achievementPopup) return;
-        elements.achievementPopup.textContent = `🏆 ${sanitizeInput(text.slice(0, 100))}`;
+        elements.achievementPopup.textContent = `🏆 ${text.slice(0, 100)}`;
         elements.achievementPopup.classList.add('show');
         setTimeout(() => {
             elements.achievementPopup.classList.remove('show');
@@ -585,11 +663,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (appState.cooldownTimer) clearInterval(appState.cooldownTimer);
         appState.isInCooldown = true;
         elements.cooldownSection.style.display = 'block';
-        elements.btnGen.disabled = true;
-        
+        if (elements.btnOpenMethodMenu) elements.btnOpenMethodMenu.disabled = true;
+
         let remaining = Math.max(0, seconds);
         elements.cooldownTime.textContent = `${remaining}s`;
-        
+
         appState.cooldownTimer = setInterval(() => {
             remaining--;
             elements.cooldownTime.textContent = `${remaining}s`;
@@ -597,8 +675,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearInterval(appState.cooldownTimer);
                 appState.isInCooldown = false;
                 elements.cooldownSection.style.display = 'none';
-                elements.btnGen.disabled = false;
-                if (appState.soundEnabled) playSoundSequence([{freq: 440, duration: 100, type: 'sine'},{freq: 554, duration: 100, type: 'sine'},{freq: 659, duration: 200, type: 'sine'}]);
+                if (elements.btnOpenMethodMenu) elements.btnOpenMethodMenu.disabled = false;
+                if (appState.soundEnabled) playSoundSequence([{ freq: 440, duration: 100, type: 'sine' }, { freq: 554, duration: 100, type: 'sine' }, { freq: 659, duration: 200, type: 'sine' }]);
                 showUIMessage(translations[appState.currentLanguage].system_ready, 'success');
             }
         }, 1000);
@@ -607,18 +685,18 @@ document.addEventListener('DOMContentLoaded', () => {
     async function generateNewKey() {
         if (appState.isProcessing) return;
         appState.isProcessing = true;
-        
+
         try {
             initAudioContext();
-            if (appState.soundEnabled) playSoundSequence([{freq: 800, duration: 100, type: 'square'},{freq: 600, duration: 100, type: 'square'},{freq: 400, duration: 150, type: 'square'}]);
+            if (appState.soundEnabled) playSoundSequence([{ freq: 800, duration: 100, type: 'square' }, { freq: 600, duration: 100, type: 'square' }, { freq: 400, duration: 150, type: 'square' }]);
 
-            setButtonLoading(elements.btnGen, true);
+            setButtonLoading(elements.btnOpenMethodMenu, true);
             elements.keyContainerEl.classList.remove('visible');
             elements.keyActions.style.display = 'none';
             elements.keyMetadata.style.display = 'none';
             elements.keyValueEl.textContent = translations[appState.currentLanguage].processing_auth;
             elements.keyValueEl.classList.add('processing');
-            
+
             const verificationToken = localStorage.getItem(CONFIG.BACKEND_VERIFICATION_TOKEN_KEY);
             if (!verificationToken || !validateToken(verificationToken)) {
                 throw new Error('Falha na verificação de segurança.');
@@ -627,35 +705,50 @@ document.addEventListener('DOMContentLoaded', () => {
             showUIMessage(translations[appState.currentLanguage].connecting_server, 'info', 0);
             const headers = { 'X-Verification-Token': verificationToken, ...discordAuth.getAuthHeaders() };
             const response = await fetch(`${CONFIG.API_BASE_URL}/generate_key`, { method: 'GET', headers });
+
+            if (response.status === 401) {
+                showUIMessage('Sessão expirada. Faça login novamente.', 'error');
+                await discordAuth.logout();
+                return;
+            }
+
             const data = await response.json();
-            
+
             elements.keyValueEl.classList.remove('processing');
             localStorage.removeItem(CONFIG.BACKEND_VERIFICATION_TOKEN_KEY);
 
             if (response.ok && data.status === 'success' && validateKey(data.key)) {
-                elements.keyValueEl.textContent = sanitizeInput(data.key);
+                elements.keyValueEl.textContent = data.key;
                 elements.keyContainerEl.classList.add('visible');
                 elements.keyActions.style.display = 'flex';
                 elements.keyMetadata.style.display = 'block';
                 elements.keyTimestamp.textContent = new Date().toLocaleString('pt-BR');
-                
+
                 appState.keyGenerationCount++;
                 appState.lastKeyGenerationTime = Date.now();
                 localStorage.setItem('keyGenerationCount', appState.keyGenerationCount.toString());
                 localStorage.setItem('lastKeyGenerationTime', appState.lastKeyGenerationTime.toString());
-                
-                if (appState.soundEnabled) playSoundSequence([{freq: 523, duration: 150, type: 'sine'},{freq: 659, duration: 150, type: 'sine'},{freq: 784, duration: 200, type: 'sine'},{freq: 1047, duration: 250, type: 'sine'}]);
+
+                if (appState.soundEnabled) playSoundSequence([{ freq: 523, duration: 150, type: 'sine' }, { freq: 659, duration: 150, type: 'sine' }, { freq: 784, duration: 200, type: 'sine' }, { freq: 1047, duration: 250, type: 'sine' }]);
                 showUIMessage(translations[appState.currentLanguage].key_valid, 'success');
-                
+
                 if (appState.keyGenerationCount === 1) showAchievement(translations[appState.currentLanguage].first_access);
                 else if (appState.keyGenerationCount === 5) showAchievement(translations[appState.currentLanguage].veteran_crewmate);
                 else if (appState.keyGenerationCount === 10) showAchievement(translations[appState.currentLanguage].security_expert);
-                
+
                 await fetchUserKeyList();
                 await discordAuth.refreshStats();
                 startCooldown(CONFIG.COOLDOWN_DURATION / 1000);
             } else {
                 const errorMessage = data?.message || 'ERRO: Solicitação Negada.';
+
+                // Se for erro de "muito rápido" (400) ou rate limit (429), tenta novamente após um delay curto
+                if (response.status === 400 && errorMessage.includes('rápida')) {
+                    showUIMessage('Verificando segurança... aguarde.', 'info', 2000);
+                    setTimeout(() => generateNewKey(), 2500); // Tenta de novo em 2.5s
+                    return;
+                }
+
                 if (response.status === 429) startCooldown(60);
                 showUIMessage(errorMessage, 'error');
                 if (appState.soundEnabled) playSound(200, 500, 'sawtooth');
@@ -666,7 +759,8 @@ document.addEventListener('DOMContentLoaded', () => {
             showUIMessage(translations[appState.currentLanguage].emergency_error.replace('{error}', error.message), 'error');
             if (appState.soundEnabled) playSound(150, 800, 'sawtooth');
         } finally {
-            setButtonLoading(elements.btnGen, false);
+            // setAllMethodsLoading(false); // This was removed, so we need to ensure btnOpenMethodMenu is handled
+            setButtonLoading(elements.btnOpenMethodMenu, false);
             appState.isProcessing = false;
         }
     }
@@ -677,6 +771,13 @@ document.addEventListener('DOMContentLoaded', () => {
             showUIMessage(translations[appState.currentLanguage].consulting_log, 'info', 0);
             const headers = discordAuth.getAuthHeaders();
             const response = await fetch(`${CONFIG.API_BASE_URL}/user_keys`, { headers });
+
+            if (response.status === 401) {
+                console.warn('Sessão expirada (401) no fetchUserKeyList. Realizando logout...');
+                await discordAuth.logout();
+                return;
+            }
+
             const data = await response.json();
             if (response.ok && data.status === 'success') {
                 appState.userKeys = data.keys || [];
@@ -693,8 +794,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function initiateShortenerRedirect() {
-        if (appState.isInCooldown || (elements.btnGen && elements.btnGen.disabled) || appState.isProcessing) {
+    async function initiateShortenerRedirect(methodIndex = 1) {
+        // Check if any button is disabled (cooldown or processing)
+        if (appState.isInCooldown || appState.isProcessing) {
             showUIMessage(translations[appState.currentLanguage].wait_cooldown, 'error');
             if (appState.soundEnabled) playSound(200, 300, 'sawtooth');
             return;
@@ -707,20 +809,27 @@ document.addEventListener('DOMContentLoaded', () => {
         appState.isProcessing = true;
         try {
             if (appState.soundEnabled) playSound(600, 100, 'square');
-            setButtonLoading(elements.btnGen, true);
             showUIMessage(translations[appState.currentLanguage].starting_verification, 'info', 0);
             const response = await fetch(`${CONFIG.API_BASE_URL}/initiate-verification`, { method: 'GET' });
             const data = await response.json();
             if (response.ok && data.status === 'success' && validateToken(data.verification_token)) {
                 localStorage.setItem(CONFIG.BACKEND_VERIFICATION_TOKEN_KEY, data.verification_token);
                 showUIMessage(translations[appState.currentLanguage].redirecting_portal, 'info', 5000);
-                setTimeout(() => { window.location.href = CONFIG.SHORTENER_URL; }, 1500);
+
+                // Select the correct URL based on method
+                let targetUrl = CONFIG.SHORTENER_URLS[methodIndex] || CONFIG.SHORTENER_URLS[1];
+
+                // Append method parameter just in case (optional, but good for tracking)
+                const urlObj = new URL(targetUrl);
+                urlObj.searchParams.append('method', methodIndex);
+
+                setTimeout(() => { window.location.href = urlObj.toString(); }, 1500);
             } else {
                 throw new Error(data.message || translations[appState.currentLanguage].unknown_error);
             }
         } catch (error) {
             showUIMessage(`❌ Falha ao iniciar: ${error.message}`, 'error');
-            setButtonLoading(elements.btnGen, false);
+            setButtonLoading(elements.btnOpenMethodMenu, false);
             appState.isProcessing = false;
         }
     }
@@ -728,25 +837,36 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkAndProcessShortenerReturn() {
         try {
             const urlParams = new URLSearchParams(window.location.search);
-            const action = urlParams.get(CONFIG.RETURN_ACTION_PARAM);
-            const status = urlParams.get(CONFIG.RETURN_STATUS_PARAM);
+            const action = urlParams.get('action');
+            const status = urlParams.get('status');
             const backendToken = localStorage.getItem(CONFIG.BACKEND_VERIFICATION_TOKEN_KEY);
 
-            if (action === CONFIG.RETURN_ACTION_VALUE && status === CONFIG.RETURN_STATUS_VALUE && backendToken) {
+            if (!backendToken) return;
+
+            // Check if any of the valid return configurations match
+            let isValidReturn = false;
+            let methodUsed = 0;
+
+            if (action === CONFIG.RETURN_CONFIG[1].action && status === CONFIG.RETURN_CONFIG[1].status) { isValidReturn = true; methodUsed = 1; }
+            else if (action === CONFIG.RETURN_CONFIG[2].action && status === CONFIG.RETURN_CONFIG[2].status) { isValidReturn = true; methodUsed = 2; }
+            else if (action === CONFIG.RETURN_CONFIG[3].action && status === CONFIG.RETURN_CONFIG[3].status) { isValidReturn = true; methodUsed = 3; }
+
+            if (isValidReturn) {
                 showUIMessage(translations[appState.currentLanguage].verification_complete, 'success');
                 window.history.replaceState({}, document.title, window.location.pathname);
                 generateNewKey();
             } else {
-                if(backendToken) localStorage.removeItem(CONFIG.BACKEND_VERIFICATION_TOKEN_KEY);
+                // Only clear if it looks like a return attempt but failed (optional, or just leave it for manual retry)
+                // localStorage.removeItem(CONFIG.BACKEND_VERIFICATION_TOKEN_KEY); 
             }
-        } catch(e) { /* Ignore errors */ }
+        } catch (e) { /* Ignore errors */ }
     }
 
     function openDiscordWidget() {
         elements.discordWidgetContainer.classList.add('active');
         elements.overlay.classList.add('active');
         document.body.style.overflow = 'hidden';
-        if (appState.soundEnabled) playSoundSequence([{freq: 523, duration: 100, type: 'sine'},{freq: 659, duration: 100, type: 'sine'}]);
+        if (appState.soundEnabled) playSoundSequence([{ freq: 523, duration: 100, type: 'sine' }, { freq: 659, duration: 100, type: 'sine' }]);
     }
 
     function closeDiscordWidget() {
@@ -763,28 +883,38 @@ document.addEventListener('DOMContentLoaded', () => {
             if (translations[lang][key]) {
                 el.textContent = translations[lang][key];
             }
+            if (translations[lang][key]) {
+                el.textContent = translations[lang][key];
+            }
+        });
+        document.querySelectorAll('[data-translate-title]').forEach(el => {
+            const key = el.getAttribute('data-translate-title');
+            if (translations[lang][key]) {
+                el.title = translations[lang][key];
+            }
         });
         document.documentElement.lang = lang === 'en' ? 'en' : 'pt-BR';
         appState.currentLanguage = lang;
         localStorage.setItem('preferredLanguage', lang);
-        
+
         discordAuth.updateModal();
         renderKeysList();
-        if(discordAuth.isAuthenticated) updateKeyLimitDisplay();
+        if (discordAuth.isAuthenticated) discordAuth.updateGenerateButton(discordAuth.userStats ? discordAuth.userStats.is_server_member : false);
+        if (discordAuth.isAuthenticated) updateKeyLimitDisplay();
     }
 
     function toggleTranslation() {
         const newLang = appState.currentLanguage === 'pt' ? 'en' : 'pt';
         applyTranslation(newLang);
     }
-    
+
     function setupCanvasStarfield() {
         const canvas = elements.starfieldCanvas;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         let stars = [];
         const numStars = Math.min(250, Math.floor((window.innerWidth * window.innerHeight) / 8000));
-        
+
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -835,24 +965,56 @@ document.addEventListener('DOMContentLoaded', () => {
             if (appState.soundEnabled) playSoundSequence([{freq: 440, duration: 100, type: 'sine'},{freq: 554, duration: 100, type: 'sine'}]);
         });
         */
-        elements.copyButton.addEventListener('click', copyToClipboard);
-        elements.btnGen.addEventListener('click', initiateShortenerRedirect);
-        elements.btnView.addEventListener('click', () => { if (appState.soundEnabled) playSound(500, 100, 'square'); fetchUserKeyList(); });
-        elements.translateButton.addEventListener('click', toggleTranslation);
-        elements.supportButton.addEventListener('click', openDiscordWidget);
-        elements.closeWidget.addEventListener('click', closeDiscordWidget);
-        elements.overlay.addEventListener('click', closeDiscordWidget);
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && elements.discordWidgetContainer.classList.contains('active')) closeDiscordWidget(); });
+        if (elements.copyButton) elements.copyButton.addEventListener('click', copyToClipboard);
+
+        // Method Menu Logic
+        if (elements.btnOpenMethodMenu) {
+            elements.btnOpenMethodMenu.addEventListener('click', () => {
+                if (elements.methodSelectionModal) elements.methodSelectionModal.style.display = 'block';
+            });
+        }
+        if (elements.closeMethodModal) {
+            elements.closeMethodModal.addEventListener('click', () => {
+                if (elements.methodSelectionModal) elements.methodSelectionModal.style.display = 'none';
+            });
+        }
+        if (elements.methodSelectionModal) {
+            window.addEventListener('click', (e) => {
+                if (e.target === elements.methodSelectionModal) elements.methodSelectionModal.style.display = 'none';
+            });
+        }
+
+        // Method Buttons in Modal
+        if (elements.btnMethod1) elements.btnMethod1.addEventListener('click', () => { if (elements.methodSelectionModal) elements.methodSelectionModal.style.display = 'none'; initiateShortenerRedirect(1); });
+        if (elements.btnMethod2) elements.btnMethod2.addEventListener('click', () => { if (elements.methodSelectionModal) elements.methodSelectionModal.style.display = 'none'; initiateShortenerRedirect(2); });
+        if (elements.btnMethod3) elements.btnMethod3.addEventListener('click', () => { if (elements.methodSelectionModal) elements.methodSelectionModal.style.display = 'none'; initiateShortenerRedirect(3); });
+        if (elements.btnView) elements.btnView.addEventListener('click', () => { if (appState.soundEnabled) playSound(500, 100, 'square'); fetchUserKeyList(); });
+        if (elements.translateButton) elements.translateButton.addEventListener('click', toggleTranslation);
+        if (elements.supportButton) elements.supportButton.addEventListener('click', openDiscordWidget);
+        if (elements.closeWidget) elements.closeWidget.addEventListener('click', closeDiscordWidget);
+        if (elements.overlay) elements.overlay.addEventListener('click', closeDiscordWidget);
+        if (elements.discordWidgetContainer) {
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && elements.discordWidgetContainer.classList.contains('active')) closeDiscordWidget(); });
+        }
         window.addEventListener('beforeunload', () => { if (appState.cooldownTimer) clearInterval(appState.cooldownTimer); });
     }
 
     function setupSessionWatcher() {
-        setInterval(async () => {
+        const checkSession = async () => {
             if (discordAuth.isAuthenticated && discordAuth.isSessionExpired()) {
                 console.log('Sessão expirada, fazendo logout...');
                 await discordAuth.logout();
             }
-        }, 60000);
+        };
+
+        // Check every minute
+        setInterval(checkSession, 60000);
+
+        // Check immediately when user returns to tab
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') checkSession();
+        });
+        window.addEventListener('focus', checkSession);
     }
 
     function initializeApp() {
@@ -876,10 +1038,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     setupSessionWatcher();
-    
+
     setTimeout(() => {
         if (appState.soundEnabled) {
-            playSoundSequence([{freq: 220, duration: 100, type: 'sine'}, {freq: 277, duration: 100, type: 'sine'}, {freq: 330, duration: 100, type: 'sine'}, {freq: 440, duration: 200, type: 'sine'}]);
+            playSoundSequence([{ freq: 220, duration: 100, type: 'sine' }, { freq: 277, duration: 100, type: 'sine' }, { freq: 330, duration: 100, type: 'sine' }, { freq: 440, duration: 200, type: 'sine' }]);
         }
     }, 1000);
 });

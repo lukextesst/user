@@ -102,7 +102,7 @@ body {
   height: 100%;
   pointer-events: none;
   z-index: 2;
-  opacity: 0.01;
+  opacity: 0.05;
   background: repeating-linear-gradient(transparent, transparent 2px, rgba(100, 180, 255, 0.1) 3px, rgba(100, 180, 255, 0.1) 4px);
   animation: scanlineAnim 15s linear infinite;
 }
@@ -1268,14 +1268,164 @@ button.loading .button-text {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
+/* Method Selection Modal Styles */
+.method-selection-content {
+  background: rgba(20, 25, 35, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  max-width: 500px;
+  width: 90%;
+  border-radius: 15px;
+  padding: 2rem;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+}
 
-  *,
-  ::before,
-  ::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+.methods-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.method-option {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  width: 100%;
+  color: white;
+}
+
+.method-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(5px);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.method-option.recommended {
+  border-color: #4CAF50;
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.method-option.recommended:hover {
+  background: rgba(76, 175, 80, 0.2);
+}
+
+.method-icon {
+  font-size: 24px;
+  margin-right: 15px;
+}
+
+.method-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.method-name {
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.method-desc {
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+
+.method-arrow {
+  font-size: 20px;
+  opacity: 0.5;
+}
+
+/* --- Confetti Effect --- */
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: #f00;
+  animation: confetti-fall 3s linear forwards;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
   }
+
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* --- Help Button --- */
+.help-button {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-color-medium);
+  border: 1px solid var(--panel-border-color);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  margin-left: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.help-button:hover {
+  background: var(--panel-highlight-color);
+  color: white;
+  border-color: var(--panel-highlight-color);
+}
+
+/* --- Tutorial Modal --- */
+.tutorial-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  text-align: left;
+}
+
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border-left: 3px solid var(--panel-highlight-color);
+}
+
+.step-number {
+  background: var(--panel-highlight-color);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.step-content h4 {
+  color: var(--text-color-light);
+  margin-bottom: 0.3rem;
+}
+
+.step-content p {
+  color: var(--text-color-medium);
+  font-size: 0.9rem;
 }
