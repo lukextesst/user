@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const CONFIG = {
         // URL da API já definida para produção
-        API_BASE_URL: 'https://keygenx-1.onrender.com',
+        API_BASE_URL: 'https://keygen2.onrender.com',
         SHORTENER_URLS: {
             1: 'https://link-target.net/63830/among-us-modmenu-key1',
             2: 'https://link-target.net/63830/DXuC2z7SQT1o',
