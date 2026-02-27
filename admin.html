@@ -1,0 +1,1988 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.crewcore.online;">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>🔐 CrewCore Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-glass: rgba(20, 20, 30, 0.85);
+      --bg-card: rgba(30, 30, 45, 0.6);
+      --text-primary: #f0f0f5;
+      --text-secondary: #a0a0b0;
+      --text-muted: #606070;
+      --accent-primary: #6366f1;
+      --accent-secondary: #8b5cf6;
+      --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+      --success: #22c55e;
+      --success-glow: rgba(34, 197, 94, 0.3);
+      --warning: #f59e0b;
+      --warning-glow: rgba(245, 158, 11, 0.3);
+      --danger: #ef4444;
+      --danger-glow: rgba(239, 68, 68, 0.3);
+      --info: #3b82f6;
+      --info-glow: rgba(59, 130, 246, 0.3);
+      --premium: #fbbf24;
+      --premium-glow: rgba(251, 191, 36, 0.4);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(99, 102, 241, 0.5);
+      --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+      --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.15);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* Animated Background */
+    .bg-animation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .bg-animation::before {
+      content: '';
+      position: absolute;
+      width: 150%;
+      height: 150%;
+      top: -25%;
+      left: -25%;
+      background:
+        radial-gradient(ellipse at 20% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 70%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(168, 85, 247, 0.08) 0%, transparent 60%);
+      animation: bgFloat 20s ease-in-out infinite;
+    }
+
+    @keyframes bgFloat {
+
+      0%,
+      100% {
+        transform: translate(0, 0) rotate(0deg);
+      }
+
+      33% {
+        transform: translate(2%, 2%) rotate(1deg);
+      }
+
+      66% {
+        transform: translate(-1%, -1%) rotate(-1deg);
+      }
+    }
+
+    /* Grid Pattern Overlay */
+    .grid-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+    }
+
+    /* Main Container */
+    .admin-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 40px 24px 60px;
+    }
+
+    /* Header */
+    .admin-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 40px;
+      padding: 24px 32px;
+      background: var(--bg-glass);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header-logo {
+      width: 48px;
+      height: 48px;
+      background: var(--accent-gradient);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);
+    }
+
+    .header-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Security Badge */
+    .security-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      border-radius: 100px;
+      font-size: 0.8rem;
+      color: var(--success);
+    }
+
+    .security-badge .dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.7;
+        transform: scale(1.1);
+      }
+    }
+
+    /* Session Timer */
+    .session-timer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(251, 191, 36, 0.1);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      border-radius: 100px;
+      font-size: 0.8rem;
+      color: var(--warning);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Theme Toggle */
+    .theme-toggle {
+      width: 44px;
+      height: 44px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .theme-toggle:hover {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      transform: scale(1.05);
+    }
+
+    /* Logout Button */
+    .btn-logout {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: var(--radius-md);
+      color: var(--danger);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .btn-logout:hover {
+      background: var(--danger);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      padding: 24px;
+      background: var(--bg-glass);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      transition: var(--transition-normal);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-glow);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 16px;
+    }
+
+    .stat-icon.available {
+      background: rgba(34, 197, 94, 0.15);
+    }
+
+    .stat-icon.used {
+      background: rgba(59, 130, 246, 0.15);
+    }
+
+    .stat-icon.premium {
+      background: rgba(251, 191, 36, 0.15);
+    }
+
+    .stat-icon.total {
+      background: rgba(139, 92, 246, 0.15);
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-value.available {
+      color: var(--success);
+    }
+
+    .stat-value.used {
+      color: var(--info);
+    }
+
+    .stat-value.premium {
+      color: var(--premium);
+    }
+
+    .stat-value.total {
+      color: var(--accent-secondary);
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    /* Main Grid */
+    .main-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Cards */
+    .card {
+      padding: 28px;
+      background: var(--bg-glass);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      transition: var(--transition-normal);
+    }
+
+    .card:hover {
+      border-color: var(--border-glow);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .card.span-2 {
+      grid-column: span 2;
+    }
+
+    @media (max-width: 768px) {
+      .card.span-2 {
+        grid-column: span 1;
+      }
+    }
+
+    .card.premium {
+      border-color: rgba(251, 191, 36, 0.3);
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.05) 0%, var(--bg-glass) 100%);
+    }
+
+    .card.premium:hover {
+      border-color: rgba(251, 191, 36, 0.5);
+      box-shadow: 0 0 40px var(--premium-glow);
+    }
+
+    .card.danger {
+      border-color: rgba(239, 68, 68, 0.3);
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, var(--bg-glass) 100%);
+    }
+
+    .card.danger:hover {
+      border-color: rgba(239, 68, 68, 0.5);
+      box-shadow: 0 0 40px var(--danger-glow);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      background: var(--accent-gradient);
+    }
+
+    .card.premium .card-icon {
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    }
+
+    .card.danger .card-icon {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .form-input,
+    .form-select {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: var(--transition-fast);
+    }
+
+    .form-input:focus,
+    .form-select:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .form-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .form-input.mono {
+      font-family: 'SF Mono', Monaco, monospace;
+      letter-spacing: 0.5px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: inherit;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: var(--transition-fast);
+      min-width: 120px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn:hover::before {
+      left: 100%;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn:disabled::before {
+      display: none;
+    }
+
+    .btn-primary {
+      background: var(--accent-gradient);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-premium {
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      color: #000;
+    }
+
+    .btn-premium:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px var(--premium-glow);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px var(--danger-glow);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      transform: translateY(-2px);
+    }
+
+    .btn-block {
+      width: 100%;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Keys List */
+    .keys-section {
+      margin-top: 20px;
+    }
+
+    .keys-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .keys-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .keys-count {
+      padding: 4px 10px;
+      background: var(--accent-gradient);
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .keys-list {
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+
+    .keys-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .keys-list::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+      border-radius: 3px;
+    }
+
+    .keys-list::-webkit-scrollbar-thumb {
+      background: var(--accent-primary);
+      border-radius: 3px;
+    }
+
+    .key-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: 8px;
+      transition: var(--transition-fast);
+    }
+
+    .key-item:hover {
+      border-color: var(--accent-primary);
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    .key-item.premium {
+      border-left: 3px solid var(--premium);
+    }
+
+    .key-value {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
+    }
+
+    .key-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .key-btn {
+      width: 32px;
+      height: 32px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      font-size: 0.9rem;
+    }
+
+    .key-btn:hover {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      transform: scale(1.1);
+    }
+
+    .key-btn.delete:hover {
+      background: var(--danger);
+      border-color: var(--danger);
+    }
+
+    .keys-empty {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+    }
+
+    .keys-empty-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    /* Login Modal */
+    .login-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      padding: 40px;
+      background: var(--bg-glass);
+      backdrop-filter: blur(30px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .login-icon {
+      width: 80px;
+      height: 80px;
+      background: var(--accent-gradient);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      margin: 0 auto 20px;
+      box-shadow: 0 0 40px rgba(99, 102, 241, 0.5);
+    }
+
+    .login-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .login-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .login-error {
+      padding: 12px 16px;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: var(--radius-md);
+      color: var(--danger);
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .login-security-info {
+      margin-top: 24px;
+      padding: 16px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .login-security-info ul {
+      margin: 8px 0 0 20px;
+    }
+
+    .login-security-info li {
+      margin-bottom: 4px;
+    }
+
+    /* Confirm Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 440px;
+      padding: 32px;
+      background: var(--bg-glass);
+      backdrop-filter: blur(30px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      text-align: center;
+    }
+
+    .modal-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .modal-message {
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      padding: 16px 24px;
+      background: var(--bg-glass);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: var(--transition-normal);
+      z-index: 3000;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      border-left: 4px solid var(--success);
+    }
+
+    .toast.error {
+      border-left: 4px solid var(--danger);
+    }
+
+    .toast.warning {
+      border-left: 4px solid var(--warning);
+    }
+
+    .toast.info {
+      border-left: 4px solid var(--info);
+    }
+
+    .toast-icon {
+      font-size: 1.25rem;
+    }
+
+    .toast-close {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 0 0 0 12px;
+      line-height: 1;
+      transition: var(--transition-fast);
+    }
+
+    .toast-close:hover {
+      color: var(--text-primary);
+    }
+
+    /* Footer */
+    .admin-footer {
+      text-align: center;
+      padding: 32px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .admin-footer a {
+      color: var(--accent-primary);
+      text-decoration: none;
+    }
+
+    .admin-footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .admin-header {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+      }
+
+      .header-brand {
+        flex-direction: column;
+      }
+
+      .header-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .admin-container {
+        padding: 20px 16px 40px;
+      }
+
+      .login-card {
+        margin: 16px;
+        padding: 24px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Status Output */
+    .status-output {
+      padding: 16px 20px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      margin-top: 16px;
+      font-size: 0.9rem;
+    }
+
+    .status-output.success {
+      border-color: var(--success);
+      background: rgba(34, 197, 94, 0.1);
+      color: var(--success);
+    }
+
+    .status-output.error {
+      border-color: var(--danger);
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger);
+    }
+
+    /* Light Mode Theme */
+    body.light-mode {
+      --bg-primary: #f0f0f5;
+      --bg-secondary: #e4e4ec;
+      --bg-glass: rgba(255, 255, 255, 0.85);
+      --bg-card: rgba(240, 240, 250, 0.6);
+      --text-primary: #1a1a2e;
+      --text-secondary: #4a4a5a;
+      --text-muted: #7a7a8a;
+      --border-subtle: rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    }
+
+    body.light-mode .bg-animation::before {
+      opacity: 0.5;
+    }
+
+    body.light-mode .grid-overlay {
+      background-image:
+        linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+    }
+
+    body.light-mode .form-input,
+    body.light-mode .form-select {
+      background: rgba(255, 255, 255, 0.6);
+      border-color: rgba(0, 0, 0, 0.15);
+    }
+
+    body.light-mode .key-item {
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    body.light-mode .status-output {
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Search Bar */
+    .keys-search {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: var(--transition-fast);
+      margin-bottom: 16px;
+    }
+
+    .keys-search:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .keys-search::placeholder {
+      color: var(--text-muted);
+    }
+
+    .search-wrapper {
+      position: relative;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      pointer-events: none;
+    }
+
+    body.light-mode .keys-search {
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Utility */
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="bg-animation"></div>
+  <div class="grid-overlay"></div>
+
+  <!-- Login Modal -->
+  <div class="login-overlay" id="loginModal">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-icon">🔐</div>
+        <h1 class="login-title">Admin Access</h1>
+        <p class="login-subtitle">Painel de Gerenciamento CrewCore</p>
+      </div>
+
+      <form id="loginForm" autocomplete="off">
+        <input type="text" name="username" class="visually-hidden" value="admin" autocomplete="username">
+
+        <div id="loginError" class="login-error"></div>
+
+        <div class="form-group">
+          <label class="form-label" for="adminSecret">🔑 Senha de Administrador</label>
+          <input type="password" id="adminSecret" name="password" class="form-input"
+            placeholder="Digite sua senha secreta" autocomplete="current-password" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="btnLogin">
+          <span>Acessar Painel</span>
+        </button>
+
+        <div class="login-security-info">
+          <strong>🛡️ Proteções Ativas:</strong>
+          <ul>
+            <li>Comparação timing-safe contra ataques</li>
+            <li>Rate limiting por IP</li>
+            <li>Logout automático por inatividade</li>
+            <li>Conexão HTTPS obrigatória</li>
+          </ul>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="admin-container" id="adminPanel" style="display: none;">
+    <!-- Header -->
+    <header class="admin-header">
+      <div class="header-brand">
+        <div class="header-logo">🎮</div>
+        <div>
+          <h1 class="header-title">CrewCore Admin</h1>
+          <p class="header-subtitle">Gerenciamento de Chaves Premium</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="security-badge">
+          <span class="dot"></span>
+          <span>Conexão Segura</span>
+        </div>
+        <div class="session-timer" id="sessionTimer">
+          <span>⏱️</span>
+          <span id="timerDisplay">15:00</span>
+        </div>
+        <button class="theme-toggle" id="themeToggle" title="Alternar tema">🌙</button>
+        <button class="btn-logout" id="btnLogout">
+          <span>🚪</span>
+          <span>Sair</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card">
+        <div class="stat-icon available">🟢</div>
+        <div class="stat-value available" id="statAvailable">-</div>
+        <div class="stat-label">Keys Disponíveis</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon used">📦</div>
+        <div class="stat-value used" id="statUsed">-</div>
+        <div class="stat-label">Keys Usadas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon premium">👑</div>
+        <div class="stat-value premium" id="statPremium">-</div>
+        <div class="stat-label">Premium Ativas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon total">📊</div>
+        <div class="stat-value total" id="statTotal">-</div>
+        <div class="stat-label">Total de Keys</div>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="main-grid">
+      <!-- Generate Standard Keys -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">🔑</div>
+          <h2 class="card-title">Gerar Keys Standard</h2>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="keyCount">Quantidade (1-5)</label>
+          <input type="number" id="keyCount" class="form-input" min="1" max="5" value="1">
+          <small style="color: var(--text-muted); font-size: 0.75rem;">⚠️ Máximo 5 keys por vez (proteção
+            anti-abuse)</small>
+        </div>
+        <button class="btn btn-primary btn-block" id="btnGenerate">
+          <span>⚡ Gerar Keys</span>
+        </button>
+      </div>
+
+      <!-- Generate Premium Keys -->
+      <div class="card premium">
+        <div class="card-header">
+          <div class="card-icon">👑</div>
+          <h2 class="card-title">Gerar Keys Premium</h2>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="premiumType">Tipo de Duração</label>
+          <select id="premiumType" class="form-select">
+            <option value="daily">⏰ Diária (24h)</option>
+            <option value="weekly">📅 Semanal (7 dias)</option>
+            <option value="monthly">📆 Mensal (30 dias)</option>
+            <option value="quarterly">📊 Trimestral (90 dias)</option>
+            <option value="yearly">🗓️ Anual (365 dias)</option>
+            <option value="lifetime">♾️ Lifetime (Permanente)</option>
+            <option value="custom">📅 Data Personalizada</option>
+          </select>
+        </div>
+        <div class="form-group" id="customDateGroup" style="display: none;">
+          <label class="form-label" for="customDate">Expira em</label>
+          <input type="datetime-local" id="customDate" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="premiumCount">Quantidade</label>
+          <input type="number" id="premiumCount" class="form-input" min="1" max="1" value="1" readonly>
+          <small style="color: var(--text-muted); font-size: 0.75rem;">⚠️ 1 key Premium por vez (proteção
+            anti-fraud)</small>
+        </div>
+        <button class="btn btn-premium btn-block" id="btnGeneratePremium">
+          <span>👑 Gerar Premium</span>
+        </button>
+      </div>
+
+      <!-- View Keys -->
+      <div class="card span-2">
+        <div class="card-header">
+          <div class="card-icon">📋</div>
+          <h2 class="card-title">Visualizar Chaves</h2>
+        </div>
+        <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: center;">
+          <button class="btn btn-secondary" id="btnViewKeys">
+            <span>🔄 Atualizar Lista</span>
+          </button>
+        </div>
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="keySearchInput" class="keys-search" placeholder="Filtrar chaves...">
+        </div>
+
+        <div id="keysContainer">
+          <!-- Available Keys -->
+          <div class="keys-section">
+            <div class="keys-header">
+              <div class="keys-title">
+                <span>🟢 Disponíveis</span>
+                <span class="keys-count" id="availableCount">0</span>
+              </div>
+            </div>
+            <div class="keys-list" id="availableKeysList">
+              <div class="keys-empty">
+                <div class="keys-empty-icon">📭</div>
+                <div>Clique em "Atualizar Lista" para carregar</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Used Keys -->
+          <div class="keys-section" style="margin-top: 24px;">
+            <div class="keys-header">
+              <div class="keys-title">
+                <span>📦 Usadas</span>
+                <span class="keys-count" id="usedCount">0</span>
+              </div>
+            </div>
+            <div class="keys-list" id="usedKeysList">
+              <div class="keys-empty">
+                <div class="keys-empty-icon">📭</div>
+                <div>Nenhuma chave usada</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delete Specific Key -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">🗑️</div>
+          <h2 class="card-title">Excluir Chave</h2>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="deleteKeyInput">Chave para Excluir</label>
+          <input type="text" id="deleteKeyInput" class="form-input mono" placeholder="XXXX-XXXX-XXXX-XXXX">
+        </div>
+        <button class="btn btn-danger btn-block" id="btnDeleteKey">
+          <span>🗑️ Excluir Chave</span>
+        </button>
+      </div>
+
+      <!-- REMOVIDO: Zona de Perigo - Funcionalidade de deletar TODAS as chaves desabilitada por segurança -->
+    </div>
+
+    <!-- Status Output -->
+    <div class="status-output" id="statusOutput">
+      ⏳ Aguardando ação...
+    </div>
+
+    <!-- Footer -->
+    <footer class="admin-footer">
+      <p>© <span id="currentYear"></span> CrewCore Admin Panel | v2.0 |
+        Feito com 💜 por <a href="#">Luke</a>
+      </p>
+    </footer>
+  </div>
+
+  <!-- Confirm Modal -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal-card">
+      <div class="modal-icon" id="confirmIcon">⚠️</div>
+      <h3 class="modal-title" id="confirmTitle">Confirmar Ação</h3>
+      <p class="modal-message" id="confirmMessage">Tem certeza?</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="confirmCancel">Cancelar</button>
+        <button class="btn btn-danger" id="confirmYes">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <span class="toast-icon" id="toastIcon">✅</span>
+    <span id="toastMessage">Mensagem</span>
+    <button class="toast-close" id="toastClose" title="Fechar">✕</button>
+  </div>
+
+  <script>
+    // ==================== CONFIGURATION ====================
+    const BACKEND_URL = "https://api.crewcore.online";
+    const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes
+    const GENERATION_COOLDOWN = 30 * 1000; // 30 seconds between generations
+    const MAX_LOGIN_ATTEMPTS = 5;
+    const LOGIN_LOCKOUT_TIME = 5 * 60 * 1000; // 5 minutes lockout
+    const MAX_STANDARD_KEYS = 5;
+    const MAX_PREMIUM_KEYS = 1;
+    const FETCH_TIMEOUT_MS = 15000; // 15s fetch timeout
+    const AUTO_REFRESH_INTERVAL_MS = 60 * 1000; // Auto-refresh keys every 60s
+
+    // ==================== STATE ====================
+    // SEC-1 FIX: Use sessionStorage instead of global variable (cleared on tab close)
+    function getAdminSecret() { return sessionStorage.getItem('_as') || ''; }
+    function setAdminSecret(v) { if (v) sessionStorage.setItem('_as', v); else sessionStorage.removeItem('_as'); }
+    let loginAttempts = 0;
+    let loginLockoutUntil = 0;
+    let lastGenerationTime = 0;
+    let inactivityTimer = null;
+    let sessionCountdown = null;
+    let remainingSeconds = 15 * 60;
+    let currentConfirmCallback = null;
+    let autoRefreshTimer = null;
+    let _lastActivityReset = 0; // Throttle activity listener
+    let _lastDeleteTime = 0; // Cooldown between deletes
+    const DELETE_COOLDOWN = 3000; // 3s between deletes
+
+    // ==================== DOM ELEMENTS ====================
+    const $ = (id) => document.getElementById(id);
+
+    const elements = {
+      loginModal: $('loginModal'),
+      loginForm: $('loginForm'),
+      loginError: $('loginError'),
+      adminSecret: $('adminSecret'),
+      btnLogin: $('btnLogin'),
+      adminPanel: $('adminPanel'),
+      btnLogout: $('btnLogout'),
+      themeToggle: $('themeToggle'),
+      timerDisplay: $('timerDisplay'),
+      keyCount: $('keyCount'),
+      premiumType: $('premiumType'),
+      premiumCount: $('premiumCount'),
+      customDateGroup: $('customDateGroup'),
+      customDate: $('customDate'),
+      btnGenerate: $('btnGenerate'),
+      btnGeneratePremium: $('btnGeneratePremium'),
+      btnViewKeys: $('btnViewKeys'),
+      btnDeleteKey: $('btnDeleteKey'),
+      deleteKeyInput: $('deleteKeyInput'),
+      availableKeysList: $('availableKeysList'),
+      usedKeysList: $('usedKeysList'),
+      availableCount: $('availableCount'),
+      usedCount: $('usedCount'),
+      statusOutput: $('statusOutput'),
+      confirmModal: $('confirmModal'),
+      confirmIcon: $('confirmIcon'),
+      confirmTitle: $('confirmTitle'),
+      confirmMessage: $('confirmMessage'),
+      confirmCancel: $('confirmCancel'),
+      confirmYes: $('confirmYes'),
+      toast: $('toast'),
+      toastIcon: $('toastIcon'),
+      toastMessage: $('toastMessage'),
+      toastClose: $('toastClose'),
+      statAvailable: $('statAvailable'),
+      statUsed: $('statUsed'),
+      statPremium: $('statPremium'),
+      statTotal: $('statTotal'),
+      currentYear: $('currentYear'),
+      keySearchInput: $('keySearchInput')
+    };
+
+    // ==================== UTILITIES ====================
+    let _toastTimeout = null;
+    function showToast(message, type = 'info') {
+      const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+      elements.toastIcon.textContent = icons[type] || icons.info;
+      elements.toastMessage.textContent = message;
+      elements.toast.className = `toast show ${type}`;
+
+      if (_toastTimeout) clearTimeout(_toastTimeout);
+      _toastTimeout = setTimeout(() => {
+        elements.toast.classList.remove('show');
+      }, 4000);
+    }
+
+    function dismissToast() {
+      if (_toastTimeout) clearTimeout(_toastTimeout);
+      elements.toast.classList.remove('show');
+    }
+
+    // SEC-2 FIX: Fetch with AbortController timeout
+    function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+    }
+
+    function showStatus(message, type = '') {
+      elements.statusOutput.textContent = message;
+      elements.statusOutput.className = `status-output ${type}`;
+    }
+
+    function setLoading(button, loading) {
+      const originalContent = button.dataset.originalContent || button.innerHTML;
+
+      if (loading) {
+        button.dataset.originalContent = button.innerHTML;
+        button.innerHTML = '<span class="spinner"></span>';
+        button.disabled = true;
+      } else {
+        button.innerHTML = button.dataset.originalContent || originalContent;
+        button.disabled = false;
+      }
+    }
+
+    function showConfirm(title, message, icon, callback) {
+      elements.confirmIcon.textContent = icon;
+      elements.confirmTitle.textContent = title;
+      elements.confirmMessage.textContent = message;
+      currentConfirmCallback = callback;
+      // SEC-5 FIX: Always reset confirmYes text before showing
+      elements.confirmYes.textContent = 'Confirmar';
+      elements.confirmModal.classList.add('show');
+    }
+
+    function hideConfirm() {
+      elements.confirmModal.classList.remove('show');
+      currentConfirmCallback = null;
+      // SEC-5 FIX: Reset button text on close
+      elements.confirmYes.textContent = 'Confirmar';
+    }
+
+    function formatTimer(seconds) {
+      const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+      const s = (seconds % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    // ==================== SESSION MANAGEMENT ====================
+    function resetInactivityTimer() {
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      if (!getAdminSecret()) return;
+
+      remainingSeconds = 15 * 60;
+      updateTimerDisplay();
+
+      inactivityTimer = setTimeout(() => {
+        handleLogout();
+        showToast('Sessão encerrada por inatividade', 'warning');
+      }, INACTIVITY_TIMEOUT);
+    }
+
+    function startSessionCountdown() {
+      if (sessionCountdown) clearInterval(sessionCountdown);
+      remainingSeconds = 15 * 60;
+
+      sessionCountdown = setInterval(() => {
+        remainingSeconds--;
+        updateTimerDisplay();
+
+        if (remainingSeconds <= 0) {
+          clearInterval(sessionCountdown);
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      elements.timerDisplay.textContent = formatTimer(remainingSeconds);
+
+      // SEC-6 FIX: Reset color when timer is healthy, change when low
+      const timerEl = elements.timerDisplay.parentElement;
+      if (remainingSeconds <= 60) {
+        timerEl.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+        timerEl.style.color = 'var(--danger)';
+      } else if (remainingSeconds <= 180) {
+        timerEl.style.borderColor = 'rgba(251, 191, 36, 0.3)';
+        timerEl.style.color = 'var(--warning)';
+      } else {
+        timerEl.style.borderColor = 'rgba(251, 191, 36, 0.3)';
+        timerEl.style.color = 'var(--warning)';
+      }
+    }
+
+    // ==================== AUTHENTICATION ====================
+    async function handleLogin(e) {
+      e.preventDefault();
+
+      // BRUTE FORCE PROTECTION: Check lockout
+      const now = Date.now();
+      if (loginLockoutUntil > now) {
+        const remainingSec = Math.ceil((loginLockoutUntil - now) / 1000);
+        elements.loginError.textContent = `🔒 Bloqueado por tentativas excessivas. Aguarde ${remainingSec}s.`;
+        elements.loginError.style.display = 'block';
+        return;
+      }
+
+      const secret = elements.adminSecret.value.trim();
+      if (!secret || secret.length < 6) {
+        elements.loginError.textContent = 'Digite a senha de administrador (mínimo 6 caracteres).';
+        elements.loginError.style.display = 'block';
+        return;
+      }
+
+      setLoading(elements.btnLogin, true);
+      elements.loginError.style.display = 'none';
+
+      try {
+        const response = await fetchWithTimeout(`${BACKEND_URL}/admin/keys`, {
+          method: 'GET',
+          headers: { 'x-admin-secret': secret }
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+          setAdminSecret(secret);
+          elements.adminSecret.value = ''; // Clear from DOM immediately
+          elements.loginModal.style.display = 'none';
+          elements.adminPanel.style.display = 'block';
+          showToast('Login realizado com sucesso!', 'success');
+
+          resetInactivityTimer();
+          startSessionCountdown();
+          startAutoRefresh();
+          loadKeys();
+
+          // SEC-4 FIX: Throttled activity listener (max once per 5s)
+          const throttledReset = () => {
+            const t = Date.now();
+            if (t - _lastActivityReset < 5000) return;
+            _lastActivityReset = t;
+            resetInactivityTimer();
+            startSessionCountdown();
+          };
+          ['mousemove', 'keydown', 'click', 'scroll'].forEach(event => {
+            document.addEventListener(event, throttledReset, { passive: true });
+          });
+        } else {
+          // BRUTE FORCE: Increment failed attempts
+          loginAttempts++;
+
+          if (loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+            loginLockoutUntil = Date.now() + LOGIN_LOCKOUT_TIME;
+            elements.loginError.textContent = `🔒 Muitas tentativas falhas! Bloqueado por 5 minutos.`;
+            loginAttempts = 0;
+            localStorage.setItem('admin_lockout', loginLockoutUntil.toString());
+          } else {
+            elements.loginError.textContent = `${data.message || 'Senha incorreta.'} (${MAX_LOGIN_ATTEMPTS - loginAttempts} tentativas restantes)`;
+          }
+          elements.loginError.style.display = 'block';
+        }
+      } catch (error) {
+        // SEC-7 FIX: Don't leak error details
+        const msg = error.name === 'AbortError' ? 'Timeout: servidor não respondeu.' : 'Erro de conexão com o servidor.';
+        elements.loginError.textContent = msg;
+        elements.loginError.style.display = 'block';
+      }
+
+      setLoading(elements.btnLogin, false);
+    }
+
+    function handleLogout() {
+      setAdminSecret('');
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      if (sessionCountdown) clearInterval(sessionCountdown);
+      if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+
+      elements.adminPanel.style.display = 'none';
+      elements.loginModal.style.display = 'flex';
+      elements.adminSecret.value = '';
+      elements.loginError.style.display = 'none';
+
+      showToast('Você foi desconectado.', 'info');
+    }
+
+    // Auto-refresh keys while panel is open
+    function startAutoRefresh() {
+      if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+      autoRefreshTimer = setInterval(() => {
+        if (getAdminSecret() && !document.hidden) loadKeys();
+      }, AUTO_REFRESH_INTERVAL_MS);
+    }
+
+    // ==================== API CALLS ====================
+    async function apiCall(endpoint, method = 'GET', body = null, button = null) {
+      const secret = getAdminSecret();
+      if (!secret) {
+        handleLogout();
+        return null;
+      }
+
+      if (button) setLoading(button, true);
+      showStatus('⏳ Processando...', '');
+
+      try {
+        const options = {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-secret': secret
+          }
+        };
+
+        if (body && method !== 'GET') {
+          options.body = JSON.stringify(body);
+        }
+
+        const response = await fetchWithTimeout(`${BACKEND_URL}/${endpoint}`, options);
+        const data = await response.json();
+
+        if (response.status === 401 || response.status === 403) {
+          handleLogout();
+          showToast('Sessão expirada. Faça login novamente.', 'error');
+          return null;
+        }
+
+        if (data.status === 'success') {
+          showStatus(`✅ ${data.message || 'Operação concluída!'}`, 'success');
+        } else {
+          showStatus(`❌ ${data.message || 'Erro na operação.'}`, 'error');
+        }
+
+        return data;
+      } catch (error) {
+        // SEC-7 FIX: Generic error message, no stack leak
+        const msg = error.name === 'AbortError' ? 'Timeout: servidor não respondeu.' : 'Erro de conexão.';
+        showStatus(`❌ ${msg}`, 'error');
+        return null;
+      } finally {
+        if (button) setLoading(button, false);
+      }
+    }
+
+    // ==================== KEY OPERATIONS ====================
+    async function loadKeys() {
+      const data = await apiCall('admin/keys', 'GET', null, elements.btnViewKeys);
+
+      if (!data || data.status !== 'success' || !data.data) {
+        return;
+      }
+
+      const { available_keys = [], used_keys = [] } = data.data;
+
+      // Update stats
+      const premiumCount = available_keys.filter(k => k.startsWith('P-')).length +
+        used_keys.filter(k => k.includes('(') && k.includes('active')).length;
+
+      elements.statAvailable.textContent = available_keys.length;
+      elements.statUsed.textContent = used_keys.length;
+      elements.statPremium.textContent = premiumCount;
+      elements.statTotal.textContent = available_keys.length + used_keys.length;
+
+      // Update counts
+      elements.availableCount.textContent = available_keys.length;
+      elements.usedCount.textContent = used_keys.length;
+
+      // Render available keys
+      if (available_keys.length > 0) {
+        elements.availableKeysList.innerHTML = available_keys.map((key, index) => {
+          const isPremium = key.startsWith('P-') || key.includes('(');
+          // SECURITY: Use data attributes instead of inline onclick to prevent XSS
+          return `
+            <div class="key-item ${isPremium ? 'premium' : ''}">
+              <span class="key-value">${escapeHtml(key)}</span>
+              <div class="key-actions">
+                <button class="key-btn copy-key-btn" data-key="${encodeURIComponent(key)}" title="Copiar">📋</button>
+                <button class="key-btn delete delete-key-btn" data-key="${encodeURIComponent(key.split(' ')[0])}" title="Excluir">🗑️</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        elements.availableKeysList.innerHTML = `
+          <div class="keys-empty">
+            <div class="keys-empty-icon">📭</div>
+            <div>Nenhuma chave disponível</div>
+          </div>
+        `;
+      }
+
+      if (used_keys.length > 0) {
+        elements.usedKeysList.innerHTML = used_keys.map(key => {
+          const rawKey = key.split(' ')[0];
+          return `
+          <div class="key-item">
+            <span class="key-value">${escapeHtml(key)}</span>
+            <div class="key-actions">
+              <button class="key-btn copy-key-btn" data-key="${encodeURIComponent(key)}" title="Copiar">📋</button>
+              <button class="key-btn delete delete-key-btn" data-key="${encodeURIComponent(rawKey)}" title="Excluir">🗑️</button>
+            </div>
+          </div>
+        `;
+        }).join('');
+      } else {
+        elements.usedKeysList.innerHTML = `
+          <div class="keys-empty">
+            <div class="keys-empty-icon">📭</div>
+            <div>Nenhuma chave usada</div>
+          </div>
+        `;
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function copyKey(key) {
+      // Extract just the key part if it has extra info
+      // SECURITY: Decode URI component since we encode in data attributes
+      const decodedKey = decodeURIComponent(key);
+      const cleanKey = decodedKey.split(' ')[0];
+      navigator.clipboard.writeText(cleanKey).then(() => {
+        showToast('Chave copiada!', 'success');
+      }).catch(() => {
+        showToast('Erro ao copiar.', 'error');
+      });
+    }
+
+    async function generateStandardKeys() {
+      // RATE LIMITING: Check cooldown
+      const now = Date.now();
+      if (now - lastGenerationTime < GENERATION_COOLDOWN) {
+        const remaining = Math.ceil((GENERATION_COOLDOWN - (now - lastGenerationTime)) / 1000);
+        showToast(`⏳ Aguarde ${remaining}s antes de gerar mais keys.`, 'warning');
+        return;
+      }
+
+      const count = parseInt(elements.keyCount.value);
+      if (isNaN(count) || count < 1 || count > MAX_STANDARD_KEYS) {
+        showToast(`Quantidade inválida (1-${MAX_STANDARD_KEYS})`, 'error');
+        return;
+      }
+
+      const data = await apiCall('admin/keys/generate', 'POST', { count }, elements.btnGenerate);
+
+      if (data && data.status === 'success') {
+        lastGenerationTime = Date.now();
+        localStorage.setItem('admin_gen_cooldown', lastGenerationTime.toString());
+        showToast(`${data.keys?.length || count} chaves geradas!`, 'success');
+        loadKeys();
+      }
+    }
+
+    async function generatePremiumKeys() {
+      // RATE LIMITING: Check cooldown
+      const now = Date.now();
+      if (now - lastGenerationTime < GENERATION_COOLDOWN) {
+        const remaining = Math.ceil((GENERATION_COOLDOWN - (now - lastGenerationTime)) / 1000);
+        showToast(`⏳ Aguarde ${remaining}s antes de gerar mais keys.`, 'warning');
+        return;
+      }
+
+      // SECURITY: Force only 1 premium key at a time
+      const count = MAX_PREMIUM_KEYS; // Always 1
+      const type = elements.premiumType.value;
+
+      if (isNaN(count) || count < 1 || count > MAX_PREMIUM_KEYS) {
+        showToast(`Quantidade inválida (máx ${MAX_PREMIUM_KEYS})`, 'error');
+        return;
+      }
+
+      let expires_at = null;
+      if (type === 'custom') {
+        const rawDate = elements.customDate.value;
+        if (!rawDate) {
+          showToast('Selecione uma data de expiração', 'error');
+          return;
+        }
+        expires_at = new Date(rawDate).toISOString();
+      }
+
+      const data = await apiCall('admin/keys/generate-premium', 'POST',
+        { count, type, expires_at }, elements.btnGeneratePremium);
+
+      if (data && data.status === 'success') {
+        showToast(`${data.keys?.length || count} chaves Premium geradas!`, 'success');
+
+        // Show generated keys in a nice alert
+        if (data.keys && data.keys.length > 0) {
+          showConfirm('👑 Keys Premium Geradas',
+            `${data.keys.join('\n')}`,
+            '✅',
+            () => {
+              navigator.clipboard.writeText(data.keys.join('\n'));
+              showToast('Todas as keys copiadas!', 'success');
+            });
+          elements.confirmYes.textContent = 'Copiar Todas';
+        }
+
+        lastGenerationTime = Date.now();
+        localStorage.setItem('admin_gen_cooldown', lastGenerationTime.toString());
+        loadKeys();
+      }
+    }
+
+    function deleteKey(key) {
+      // RATE LIMIT: Client-side cooldown between deletes
+      const now = Date.now();
+      if (now - _lastDeleteTime < DELETE_COOLDOWN) {
+        const remaining = Math.ceil((DELETE_COOLDOWN - (now - _lastDeleteTime)) / 1000);
+        showToast(`⏳ Aguarde ${remaining}s antes de excluir outra key.`, 'warning');
+        return;
+      }
+
+      // SECURITY: Decode URI component since we encode in data attributes
+      const decodedKey = decodeURIComponent(key);
+      showConfirm(
+        'Excluir Chave',
+        `Tem certeza que deseja excluir a chave "${decodedKey}"?`,
+        '🗑️',
+        async () => {
+          const data = await apiCall(`admin/keys/${encodeURIComponent(decodedKey)}`, 'DELETE', null, elements.btnDeleteKey);
+          if (data && data.status === 'success') {
+            _lastDeleteTime = Date.now(); // Update cooldown after successful delete
+            showToast('Chave excluída!', 'success');
+            loadKeys();
+          }
+          hideConfirm();
+        }
+      );
+    }
+
+    function deleteSpecificKey() {
+      const key = elements.deleteKeyInput.value.trim();
+      if (!key) {
+        showToast('Digite a chave para excluir', 'error');
+        return;
+      }
+      deleteKey(key);
+    }
+
+    // ==================== SEARCH FILTER ====================
+    function filterKeys(query) {
+      const q = query.toLowerCase();
+      document.querySelectorAll('#keysContainer .key-item').forEach(item => {
+        const keyText = item.querySelector('.key-value')?.textContent?.toLowerCase() || '';
+        item.style.display = keyText.includes(q) ? '' : 'none';
+      });
+    }
+
+    // ==================== THEME ====================
+    function toggleTheme() {
+      document.body.classList.toggle('light-mode');
+      const isLight = document.body.classList.contains('light-mode');
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+      elements.themeToggle.textContent = isLight ? '☀️' : '🌙';
+    }
+
+    function applyTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'light') {
+        document.body.classList.add('light-mode');
+        elements.themeToggle.textContent = '☀️';
+      }
+    }
+
+    // ==================== INITIALIZATION ====================
+    document.addEventListener('DOMContentLoaded', () => {
+      // Set current year
+      elements.currentYear.textContent = new Date().getFullYear();
+
+      // Apply saved theme
+      applyTheme();
+
+      // SEC-8 FIX: Persist generation cooldown across refreshes
+      const storedCooldown = localStorage.getItem('admin_gen_cooldown');
+      if (storedCooldown) {
+        const cd = parseInt(storedCooldown);
+        if (cd > Date.now() - GENERATION_COOLDOWN) lastGenerationTime = cd;
+        else localStorage.removeItem('admin_gen_cooldown');
+      }
+
+      // BRUTE FORCE: Check for existing lockout from localStorage
+      const storedLockout = localStorage.getItem('admin_lockout');
+      if (storedLockout) {
+        const lockoutTime = parseInt(storedLockout);
+        if (lockoutTime > Date.now()) {
+          loginLockoutUntil = lockoutTime;
+          const remainingSec = Math.ceil((lockoutTime - Date.now()) / 1000);
+          elements.loginError.textContent = `🔒 Bloqueado. Aguarde ${remainingSec}s.`;
+          elements.loginError.style.display = 'block';
+        } else {
+          localStorage.removeItem('admin_lockout');
+        }
+      }
+
+      // Event listeners
+      elements.loginForm.addEventListener('submit', handleLogin);
+      elements.btnLogout.addEventListener('click', handleLogout);
+      elements.themeToggle.addEventListener('click', toggleTheme);
+      elements.btnGenerate.addEventListener('click', generateStandardKeys);
+      elements.btnGeneratePremium.addEventListener('click', generatePremiumKeys);
+      elements.btnViewKeys.addEventListener('click', loadKeys);
+      elements.btnDeleteKey.addEventListener('click', deleteSpecificKey);
+      elements.toastClose.addEventListener('click', dismissToast);
+
+      // Search filter for keys
+      elements.keySearchInput.addEventListener('input', (e) => filterKeys(e.target.value));
+
+      // EVENT DELEGATION: Handle key button clicks securely (prevents XSS via inline handlers)
+      document.getElementById('keysContainer').addEventListener('click', (e) => {
+        const copyBtn = e.target.closest('.copy-key-btn');
+        const deleteBtn = e.target.closest('.delete-key-btn');
+
+        if (copyBtn) {
+          copyKey(copyBtn.dataset.key);
+        } else if (deleteBtn) {
+          deleteKey(deleteBtn.dataset.key);
+        }
+      });
+
+      elements.confirmCancel.addEventListener('click', hideConfirm);
+      elements.confirmYes.addEventListener('click', () => {
+        if (currentConfirmCallback) currentConfirmCallback();
+      });
+
+      // V3 FIX: Escape key closes modals
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          if (elements.confirmModal.classList.contains('show')) hideConfirm();
+        }
+      });
+
+      // Premium type change
+      elements.premiumType.addEventListener('change', () => {
+        elements.customDateGroup.style.display =
+          elements.premiumType.value === 'custom' ? 'block' : 'none';
+      });
+
+      // Focus on password field
+      elements.adminSecret.focus();
+
+      // HTTPS warning
+      if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+        showToast('⚠️ Use HTTPS para maior segurança!', 'warning');
+      }
+
+      // Restore session if tab was refreshed (sessionStorage survives refresh)
+      if (getAdminSecret()) {
+        elements.loginModal.style.display = 'none';
+        elements.adminPanel.style.display = 'block';
+        resetInactivityTimer();
+        startSessionCountdown();
+        startAutoRefresh();
+        loadKeys();
+
+        const throttledReset = () => {
+          const t = Date.now();
+          if (t - _lastActivityReset < 5000) return;
+          _lastActivityReset = t;
+          resetInactivityTimer();
+          startSessionCountdown();
+        };
+        ['mousemove', 'keydown', 'click', 'scroll'].forEach(event => {
+          document.addEventListener(event, throttledReset, { passive: true });
+        });
+      }
+    });
+  </script>
+</body>
+
+</html>
