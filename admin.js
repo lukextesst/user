@@ -1,5 +1,5 @@
 // ==================== CONFIGURATION ====================
-const BACKEND_URL = "https://api.crewcore.online";
+const BACKEND_URL = "https://dev.crewcore.online";
 const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes
 const GENERATION_COOLDOWN = 30 * 1000; // 30 seconds between generations
 // VULN-A5: Client-side lockout removed — server handles brute force protection
