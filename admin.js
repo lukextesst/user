@@ -217,6 +217,16 @@ async function handleLogin(e) {
   elements.loginError.style.display = 'none';
 
   try {
+    // Quick health check to differentiate "server down" from "server slow"
+    try {
+      await fetchWithTimeout(`${BACKEND_URL}/health`, {}, 5000);
+    } catch (_hErr) {
+      elements.loginError.textContent = 'Servidor offline ou inacess\u00EDvel. Verifique se o Node.js est\u00E1 rodando no VPS (pm2 status).';
+      elements.loginError.style.display = 'block';
+      setLoading(elements.btnLogin, false);
+      return;
+    }
+
     // VULN-A1 FIX: Send password ONCE to /admin/login, get session token back
     const response = await fetchWithTimeout(`${BACKEND_URL}/admin/login`, {
       method: 'POST',
